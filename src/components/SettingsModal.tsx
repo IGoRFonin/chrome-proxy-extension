@@ -59,9 +59,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
       {mode === 'selected' && (
         <div>
           <h3>Domain List:</h3>
-          <ul>
+          <ul style={{ margin: 0, padding: 0, display: 'flex', flexWrap: 'wrap', listStyle: 'none' }}>
             {selectedDomains.split('\n').map((domain, index) => (
-              <li key={index} style={{ marginBottom: '8px' }}>
+              <li key={index} style={{ marginBottom: '8px', width: '50%' }}>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <button onClick={() => removeDomain(domain)}>X</button>
                   {domain}
