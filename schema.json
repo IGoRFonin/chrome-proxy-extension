@@ -1,0 +1,39 @@
+{
+  "type": "object",
+  "properties": {
+    "appState": {
+      "type": "object",
+      "properties": {
+        "proxies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "active": { "type": "boolean" },
+              "host": { "type": "string" },
+              "port": { "type": "string" },
+              "login": { "type": "string" },
+              "password": { "type": "string" }
+            },
+            "required": ["active", "host", "port"]
+          }
+        },
+        "settings": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": ["all", "selected"]
+            },
+            "selectedDomains": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "required": ["mode", "selectedDomains"]
+        }
+      },
+      "required": ["proxies", "settings"]
+    }
+  }
+} 

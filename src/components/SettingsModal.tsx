@@ -61,7 +61,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
           <h3>Domain List:</h3>
           <ul>
             {selectedDomains.split('\n').map((domain, index) => (
-              <li key={index}>
+              <li key={index} style={{ marginBottom: '8px' }}>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <button onClick={() => removeDomain(domain)}>X</button>
                   {domain}
@@ -73,11 +73,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
             value={selectedDomains}
             onChange={(e) => setSelectedDomains(e.target.value)}
             placeholder="Enter domains (one per line). Use * for wildcards, e.g. *.example.com"
+            style={{ height: '80px' }}
           />
           <p>Tip: Use * for wildcards, e.g. *.googlevideo.com to include all subdomains</p>
         </div>
       )}
-      <button onClick={handleSave}>Save</button>
+      <button onClick={handleSave} style={{ marginRight: '8px' }}>Save</button>
       <button onClick={onClose}>Cancel</button>
     </div>
   );

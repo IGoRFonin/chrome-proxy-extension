@@ -11,6 +11,7 @@ export default defineConfig({
       writeBundle() {
         copyFileSync('public/icon-128.png', 'dist/icon-128.png');
         copyFileSync('manifest.json', 'dist/manifest.json');
+        copyFileSync('schema.json', 'dist/schema.json');
       }
     }
   ],

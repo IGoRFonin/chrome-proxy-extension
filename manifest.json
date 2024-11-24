@@ -4,11 +4,11 @@
     "version": "1.0",
     "description": "Manage your proxy servers",
     "permissions": [
-      "proxy",
       "storage",
+      "proxy",
       "webRequest",
-      "webRequestAuthProvider",
-      "contextMenus"
+      "contextMenus",
+      "webRequestAuthProvider"
     ],
     "host_permissions": [
       "<all_urls>"
@@ -25,5 +25,8 @@
     },
     "icons": {
       "128": "icon-128.png"
+    },
+    "storage": {
+      "managed_schema": "schema.json"
     }
   }

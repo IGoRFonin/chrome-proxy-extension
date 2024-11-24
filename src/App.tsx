@@ -3,6 +3,7 @@ import ProxyTable from './components/ProxyTable';
 import AddProxyForm from './components/AddProxyForm';
 import SettingsModal from './components/SettingsModal';
 import { ProxyEntry, ProxySettings, AppState } from './types';
+import { StorageManager } from './utils/storage';
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>({
@@ -13,17 +14,16 @@ const App: React.FC = () => {
   const [currentProxyIndex, setCurrentProxyIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    // Load state from chrome.storage
-    chrome.storage.sync.get('appState', (result) => {
-      if (result.appState) {
-        setState(result.appState);
-      }
-    });
+    const loadState = async () => {
+      const state = await StorageManager.getState();
+      setState(state);
+    };
+    loadState();
   }, []);
 
-  const saveState = (newState: AppState) => {
+  const saveState = async (newState: AppState) => {
     setState(newState);
-    chrome.storage.sync.set({ appState: newState });
+    await StorageManager.setState(newState);
   };
 
   const addProxyList = (proxyList: string) => {
