@@ -63,19 +63,57 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 });
 
 function setProxySettings(proxy: ProxyEntry, settings: AppState['settings']) {
-  chrome.proxy.settings.set({
-    value: {
+  let config: chrome.proxy.ProxyConfig;
+
+  if (settings.mode === 'all') {
+    config = {
       mode: "fixed_servers",
       rules: {
         singleProxy: {
           scheme: "http",
           host: proxy.host,
-          port: parseInt(proxy.port)
+          port: parseInt(proxy.port, 10)
         }
       }
-    },
-    scope: "regular"
-  });
+    };
+  } else {
+    config = {
+      mode: "pac_script",
+      pacScript: {
+        data: `
+          function FindProxyForURL(url, host) {
+            var proxy = "PROXY ${proxy.host}:${proxy.port}";
+            var domains = ${JSON.stringify(settings.selectedDomains)};
+            
+            for (var i = 0; i < domains.length; i++) {
+              var domain = domains[i];
+              if (domain.startsWith('*.')) {
+                var suffix = domain.substr(1);
+                if (dnsDomainIs(host, suffix) || host.endsWith(suffix)) {
+                  return proxy;
+                }
+              } else if (host === domain || host.endsWith('.' + domain)) {
+                return proxy;
+              }
+            }
+            return "DIRECT";
+          }
+        `
+      }
+    };
+  }
+  
+  chrome.proxy.settings.set({ value: config, scope: 'regular' });
+  
+  if (proxy.login && proxy.password) {
+    chrome.webRequest.onAuthRequired.addListener(
+      authListener,
+      { urls: ["<all_urls>"] },
+      ["asyncBlocking"]
+    );
+  } else {
+    chrome.webRequest.onAuthRequired.removeListener(authListener);
+  }
 }
 
 async function authListener(
