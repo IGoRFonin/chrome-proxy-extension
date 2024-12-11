@@ -12,7 +12,7 @@ export interface StorageManagerType {
 export const StorageManager: StorageManagerType = {
   async getState(): Promise<AppState> {
     return new Promise((resolve) => {
-      chrome.storage.sync.get('appState', (result) => {
+      chrome.storage.local.get('appState', (result) => {
         resolve(result.appState || {
           proxies: [],
           settings: { mode: 'all', selectedDomains: [] }
@@ -23,7 +23,7 @@ export const StorageManager: StorageManagerType = {
 
   async setState(state: AppState): Promise<void> {
     return new Promise((resolve) => {
-      chrome.storage.sync.set({ appState: state }, resolve);
+      chrome.storage.local.set({ appState: state }, resolve);
     });
   },
 

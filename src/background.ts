@@ -2,22 +2,32 @@ import { StorageManager } from './utils/storage';
 import type { AppState, ProxyEntry } from './types';
 
 chrome.runtime.onInstalled.addListener(async () => {
-  await StorageManager.setState({
-    proxies: [],
-    settings: { mode: 'all', selectedDomains: [] }
-  });
-  
+  const state = await StorageManager.getState();
+
+  if (!state.proxies.length) {
+    await StorageManager.setState({
+      proxies: [],
+      settings: { mode: 'all', selectedDomains: [] }
+    });
+  }  
+
   chrome.contextMenus.create({
     id: "addDomain",
     title: "Add domain to proxy list",
     contexts: ["all"]
   });
-  
+
+  chrome.contextMenus.create({
+    id: "addDomainSubDomain",
+    title: "Add subdomain to proxy list",
+    contexts: ["all"]
+  });
+    
   chrome.contextMenus.create({
     id: "removeDomain",
     title: "Remove domain from proxy list",
     contexts: ["all"]
-  });
+  }); 
 });
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
@@ -35,6 +45,23 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         }
       } else {
         state.settings.selectedDomains = state.settings.selectedDomains.filter(d => d !== domain);
+      }
+      return state;
+    });
+  }
+
+  if (info.menuItemId === "addDomainSubDomain") {
+    const url = new URL(tab?.url || "");
+    const domain = url.hostname;
+    // Examples:
+    // For domain "example.com" -> "*.example.com"
+    // For domain "sub.example.com" -> "*.example.com" 
+    // For domain "deep.sub.example.com" -> "*.example.com"
+    const subdomain = '*.' + domain.split('.').slice(-2).join('.');
+
+    await StorageManager.updateState((state) => {
+      if (!state.settings.selectedDomains.includes(subdomain)) {
+        state.settings.selectedDomains.push(subdomain);
       }
       return state;
     });
