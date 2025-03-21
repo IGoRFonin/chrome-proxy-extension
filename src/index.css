@@ -1,41 +1,376 @@
 body {
     font-family: Arial, sans-serif;
     margin: 0;
-    padding: 20px;
-    width: 400px;
-  }
-  
-  table {
+    width: 690px;
+    min-height: 500px;
+}
+
+table {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 20px;
-  }
-  
-  th, td {
-    border: 1px solid #ddd;
+}
+
+th,
+td {
     padding: 8px;
     text-align: left;
-  }
-  
-  th {
-    background-color: #f2f2f2;
-  }
-  
-  input[type="text"], input[type="password"], textarea {
+}
+
+th {
+    font-weight: bold;
+    border-bottom: 1px solid #ddd;
+}
+
+td {
+    border-bottom: 1px solid #ddd;
+}
+
+input[type="text"],
+input[type="password"],
+textarea {
     width: 100%;
     padding: 8px;
     margin-bottom: 10px;
-  }
-  
-  button {
-    background-color: #4CAF50;
+}
+
+button {
+    background-color: #6366F1;
     color: white;
     padding: 6px 15px 4px;
     border: none;
     cursor: pointer;
     border-radius: 8px;
-  }
-  
-  button:hover {
-    background-color: #45a049;
-  }
+}
+
+button:hover {
+    background-color: #4F46E5;
+}
+
+/* Proxy Table Styling */
+.proxy-table-container {
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 16px;
+    margin-bottom: 16px;
+    background-color: white;
+}
+
+.proxy-header {
+    margin-bottom: 20px;
+}
+
+.proxy-header h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #111827;
+}
+
+.proxy-header p {
+    color: #6B7280;
+    font-size: 14px;
+}
+
+.proxy-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.proxy-table th {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid #E5E7EB;
+    color: #4B5563;
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.proxy-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #E5E7EB;
+    color: #4B5563;
+    font-size: 14px;
+}
+
+.proxy-table tr:last-child td {
+    border-bottom: none;
+}
+
+.proxy-checkbox {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #D1D5DB;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    display: grid;
+    place-items: center;
+    background-color: white;
+    transition: all 0.2s ease;
+}
+
+.proxy-checkbox:checked {
+    background-color: #6366F1;
+    border-color: #6366F1;
+}
+
+.proxy-checkbox:checked::before {
+    content: '';
+    display: block;
+    width: 3px;
+    height: 9px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) translate(0, -1px);
+}
+
+.proxy-checkbox:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.edit-button,
+.delete-button {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    font-weight: 500;
+}
+
+.edit-button {
+    color: #6366F1;
+    background: none;
+}
+
+.delete-button {
+    color: #EF4444;
+    background: none;
+}
+
+.edit-button:hover {
+    background-color: #EEF2FF;
+}
+
+.delete-button:hover {
+    background-color: #FEF2F2;
+}
+
+.empty-state {
+    text-align: center;
+    color: #9CA3AF;
+    padding: 24px 0;
+}
+
+/* Add Proxy Button */
+.add-proxy-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #6366F1;
+    color: white;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+}
+
+.add-proxy-button:hover {
+    background-color: #4F46E5;
+}
+
+/* Modal Styling */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 8px;
+    width: 500px;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #6B7280;
+}
+
+.close-button:hover {
+    color: #FFF;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid #E5E7EB;
+}
+
+/* Form Styling */
+.form-group {
+    padding: 16px 24px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.proxy-textarea {
+    width: 95%;
+    padding: 10px;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.format-info {
+    padding: 0 24px 16px;
+}
+
+.format-info p {
+    margin: 0 0 8px;
+    color: #4B5563;
+    font-size: 14px;
+}
+
+.format-info ul {
+    margin: 0 0 12px;
+    padding-left: 24px;
+}
+
+.format-info li {
+    margin-bottom: 4px;
+    color: #4B5563;
+    font-size: 14px;
+}
+
+.format-info code {
+    background-color: #F3F4F6;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 13px;
+}
+
+.format-note {
+    font-style: italic;
+    color: #6B7280;
+    font-size: 13px !important;
+}
+
+.cancel-button,
+.submit-button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.cancel-button {
+    background-color: white;
+    border: 1px solid #D1D5DB;
+    color: #4B5563;
+}
+
+.submit-button {
+    background-color: #6366F1;
+    border: none;
+    color: white;
+}
+
+.cancel-button:hover {
+    background-color: #F9FAFB;
+}
+
+.submit-button:hover {
+    background-color: #4F46E5;
+}
+
+.add-proxy-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+}
+
+/* App Container */
+.app-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 16px;
+}
+
+.app-header {
+    margin-bottom: 32px;
+}
+
+.app-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.app-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.proxy-table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 40px;
+}
+
+.proxy-settings-container {
+    margin-bottom: 12px;
+}

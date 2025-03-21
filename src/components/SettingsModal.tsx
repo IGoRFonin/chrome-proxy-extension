@@ -48,7 +48,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   return (
     <div className="modal">
       <h2>Proxy Settings</h2>
-      <div>
+      <div className="proxy-settings-container">
         <label>
           <input
             type="radio"
