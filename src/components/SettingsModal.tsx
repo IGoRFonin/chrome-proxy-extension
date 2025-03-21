@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ProxySettings } from '../types';
+import React, { useState, useEffect } from "react";
+import { ProxySettings } from "../types";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -8,26 +8,38 @@ interface SettingsModalProps {
   onSave: (settings: ProxySettings) => void;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings, onSave }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({
+  isOpen,
+  onClose,
+  settings,
+  onSave,
+}) => {
   const [mode, setMode] = useState(settings.mode);
-  const [selectedDomains, setSelectedDomains] = useState(settings.selectedDomains.join('\n'));
+  const [selectedDomains, setSelectedDomains] = useState(
+    settings.selectedDomains.join("\n")
+  );
 
   useEffect(() => {
     setMode(settings.mode);
-    setSelectedDomains(settings.selectedDomains.join('\n'));
+    setSelectedDomains(settings.selectedDomains.join("\n"));
   }, [settings]);
 
   const handleSave = () => {
     onSave({
       mode,
-      selectedDomains: mode === 'selected' ? selectedDomains.split('\n').filter(domain => domain.trim() !== '') : []
+      selectedDomains: selectedDomains
+        .split("\n")
+        .filter((domain) => domain.trim() !== ""),
     });
     onClose();
   };
 
   const removeDomain = (domainToRemove: string) => {
-    setSelectedDomains(prev => 
-      prev.split('\n').filter(domain => domain !== domainToRemove).join('\n')
+    setSelectedDomains((prev) =>
+      prev
+        .split("\n")
+        .filter((domain) => domain !== domainToRemove)
+        .join("\n")
     );
   };
 
@@ -41,8 +53,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
           <input
             type="radio"
             value="all"
-            checked={mode === 'all'}
-            onChange={() => setMode('all')}
+            checked={mode === "all"}
+            onChange={() => setMode("all")}
           />
           For all domains
         </label>
@@ -50,19 +62,29 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
           <input
             type="radio"
             value="selected"
-            checked={mode === 'selected'}
-            onChange={() => setMode('selected')}
+            checked={mode === "selected"}
+            onChange={() => setMode("selected")}
           />
           For selected domains
         </label>
       </div>
-      {mode === 'selected' && (
+      {mode === "selected" && (
         <div>
           <h3>Domain List:</h3>
-          <ul style={{ margin: 0, padding: 0, display: 'flex', flexWrap: 'wrap', listStyle: 'none' }}>
-            {selectedDomains.split('\n').map((domain, index) => (
-              <li key={index} style={{ marginBottom: '8px', width: '50%' }}>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <ul
+            style={{
+              margin: 0,
+              padding: 0,
+              display: "flex",
+              flexWrap: "wrap",
+              listStyle: "none",
+            }}
+          >
+            {selectedDomains.split("\n").map((domain, index) => (
+              <li key={index} style={{ marginBottom: "8px", width: "50%" }}>
+                <div
+                  style={{ display: "flex", gap: "8px", alignItems: "center" }}
+                >
                   <button onClick={() => removeDomain(domain)}>X</button>
                   {domain}
                 </div>
@@ -73,12 +95,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, settings
             value={selectedDomains}
             onChange={(e) => setSelectedDomains(e.target.value)}
             placeholder="Enter domains (one per line). Use * for wildcards, e.g. *.example.com"
-            style={{ height: '80px' }}
+            style={{ height: "80px" }}
           />
-          <p>Tip: Use * for wildcards, e.g. *.googlevideo.com to include all subdomains</p>
+          <p>
+            Tip: Use * for wildcards, e.g. *.googlevideo.com to include all
+            subdomains
+          </p>
         </div>
       )}
-      <button onClick={handleSave} style={{ marginRight: '8px' }}>Save</button>
+      <button onClick={handleSave} style={{ marginRight: "8px" }}>
+        Save
+      </button>
       <button onClick={onClose}>Cancel</button>
     </div>
   );

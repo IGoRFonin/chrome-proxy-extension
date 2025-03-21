@@ -30,6 +30,32 @@ chrome.runtime.onInstalled.addListener(async () => {
   });
 });
 
+// Initialize proxy settings when browser starts
+chrome.runtime.onStartup.addListener(async () => {
+  const state = await StorageManager.getState();
+  const activeProxy = state.proxies.find((proxy) => proxy.active);
+
+  if (activeProxy) {
+    setProxySettings(activeProxy, state.settings);
+    updateIcon(true);
+  } else {
+    updateIcon(false);
+  }
+});
+
+// Also initialize on extension load (helps when extension is reloaded/updated)
+(async () => {
+  const state = await StorageManager.getState();
+  const activeProxy = state.proxies.find((proxy) => proxy.active);
+
+  if (activeProxy) {
+    setProxySettings(activeProxy, state.settings);
+    updateIcon(true);
+  } else {
+    updateIcon(false);
+  }
+})();
+
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "addDomain" || info.menuItemId === "removeDomain") {
     const url = new URL(tab?.url || "");
@@ -115,7 +141,7 @@ function setProxySettings(proxy: ProxyEntry, settings: AppState["settings"]) {
           function FindProxyForURL(url, host) {
             var proxy = "PROXY ${proxy.host}:${proxy.port}";
             var domains = ${JSON.stringify(settings.selectedDomains)};
-            
+
             for (var i = 0; i < domains.length; i++) {
               var domain = domains[i];
               if (domain.startsWith('*.')) {
@@ -136,16 +162,24 @@ function setProxySettings(proxy: ProxyEntry, settings: AppState["settings"]) {
 
   chrome.proxy.settings.set({ value: config, scope: "regular" });
 
+  // First remove any existing listener to avoid duplicates
+  if (chrome.webRequest.onAuthRequired.hasListener(authListener)) {
+    chrome.webRequest.onAuthRequired.removeListener(authListener);
+  }
+
+  // Add auth listener if credentials are provided
   if (proxy.login && proxy.password) {
     chrome.webRequest.onAuthRequired.addListener(
       authListener,
       { urls: ["<all_urls>"] },
       ["asyncBlocking"]
     );
-  } else {
-    chrome.webRequest.onAuthRequired.removeListener(authListener);
   }
 }
+
+// Keep track of authentication attempts to prevent infinite auth loops
+let authAttemptCount = 0;
+const MAX_AUTH_ATTEMPTS = 3;
 
 async function authListener(
   details: chrome.webRequest.WebAuthenticationChallengeDetails,
@@ -154,6 +188,20 @@ async function authListener(
   const appState = await StorageManager.getState();
   const activeProxy = appState.proxies.find((proxy) => proxy.active);
 
+  // Reset auth counter for new URLs
+  if (authAttemptCount > 0 && details.requestId) {
+    authAttemptCount = 0;
+  }
+
+  // Prevent infinite auth loops
+  if (authAttemptCount >= MAX_AUTH_ATTEMPTS) {
+    console.error("Max auth attempts reached for proxy", details.url);
+    if (callback) callback({});
+    return;
+  }
+
+  authAttemptCount++;
+
   if (activeProxy && activeProxy.login && activeProxy.password && callback) {
     callback({
       authCredentials: {
@@ -161,6 +209,8 @@ async function authListener(
         password: activeProxy.password,
       },
     });
+  } else if (callback) {
+    callback({});
   }
 }
 
