@@ -15,32 +15,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   onSave,
 }) => {
   const [mode, setMode] = useState(settings.mode);
-  const [selectedDomains, setSelectedDomains] = useState(
-    settings.selectedDomains.join("\n")
-  );
 
   useEffect(() => {
     setMode(settings.mode);
-    setSelectedDomains(settings.selectedDomains.join("\n"));
   }, [settings]);
 
   const handleSave = () => {
     onSave({
       mode,
-      selectedDomains: selectedDomains
-        .split("\n")
-        .filter((domain) => domain.trim() !== ""),
     });
     onClose();
-  };
-
-  const removeDomain = (domainToRemove: string) => {
-    setSelectedDomains((prev) =>
-      prev
-        .split("\n")
-        .filter((domain) => domain !== domainToRemove)
-        .join("\n")
-    );
   };
 
   if (!isOpen) return null;
@@ -49,64 +33,81 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     <div className="modal">
       <h2>Proxy Settings</h2>
       <div className="proxy-settings-container">
-        <label>
-          <input
-            type="radio"
-            value="all"
-            checked={mode === "all"}
-            onChange={() => setMode("all")}
-          />
-          For all domains
-        </label>
-        <label>
-          <input
-            type="radio"
-            value="selected"
-            checked={mode === "selected"}
-            onChange={() => setMode("selected")}
-          />
-          For selected domains
-        </label>
-      </div>
-      {mode === "selected" && (
-        <div>
-          <h3>Domain List:</h3>
-          <ul
-            style={{
-              margin: 0,
-              padding: 0,
-              display: "flex",
-              flexWrap: "wrap",
-              listStyle: "none",
-            }}
-          >
-            {selectedDomains.split("\n").map((domain, index) => (
-              <li key={index} style={{ marginBottom: "8px", width: "50%" }}>
-                <div
-                  style={{ display: "flex", gap: "8px", alignItems: "center" }}
-                >
-                  <button onClick={() => removeDomain(domain)}>X</button>
-                  {domain}
-                </div>
-              </li>
-            ))}
-          </ul>
-          <textarea
-            value={selectedDomains}
-            onChange={(e) => setSelectedDomains(e.target.value)}
-            placeholder="Enter domains (one per line). Use * for wildcards, e.g. *.example.com"
-            style={{ height: "80px" }}
-          />
-          <p>
-            Tip: Use * for wildcards, e.g. *.googlevideo.com to include all
-            subdomains
-          </p>
+        <div className="mode-option">
+          <label>
+            <input
+              type="radio"
+              value="global"
+              checked={mode === "global"}
+              onChange={() => setMode("global")}
+            />
+            <div className="mode-info">
+              <strong>Global mode</strong>
+              <p>
+                Use one active proxy for all domains. Simple and
+                straightforward.
+              </p>
+            </div>
+          </label>
         </div>
-      )}
-      <button onClick={handleSave} style={{ marginRight: "8px" }}>
-        Save
-      </button>
-      <button onClick={onClose}>Cancel</button>
+
+        <div className="mode-option">
+          <label>
+            <input
+              type="radio"
+              value="domain-based"
+              checked={mode === "domain-based"}
+              onChange={() => setMode("domain-based")}
+            />
+            <div className="mode-info">
+              <strong>Domain-based mode</strong>
+              <p>
+                Use multiple active proxies, each with their own domain lists.
+                Advanced routing with conflict resolution by priority.
+              </p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div className="mode-explanation">
+        {mode === "global" && (
+          <div className="explanation-box">
+            <h4>How Global Mode Works:</h4>
+            <ul>
+              <li>Only one proxy can be active at a time</li>
+              <li>All internet traffic goes through the active proxy</li>
+              <li>Perfect for simple proxy switching</li>
+            </ul>
+          </div>
+        )}
+
+        {mode === "domain-based" && (
+          <div className="explanation-box">
+            <h4>How Domain-Based Mode Works:</h4>
+            <ul>
+              <li>Multiple proxies can be active simultaneously</li>
+              <li>Each proxy has its own list of domains</li>
+              <li>Traffic is routed based on domain matching</li>
+              <li>Conflicts are resolved by proxy priority (order in list)</li>
+              <li>Domains not matched by any proxy go direct</li>
+            </ul>
+            <p>
+              <strong>Note:</strong> Configure domains for each proxy in the
+              Edit dialog.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="modal-actions">
+        <button onClick={handleSave} className="save-button">
+          Save
+        </button>
+        <button onClick={onClose} className="cancel-button">
+          Cancel
+        </button>
+      </div>
     </div>
   );
 };

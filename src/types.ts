@@ -5,11 +5,13 @@ export interface ProxyEntry {
   port: string;
   login: string;
   password: string;
+  domains: string[]; // новое поле для доменов прокси
+  priority?: number; // новое поле для автоматического приоритета по позиции в списке
 }
 
 export interface ProxySettings {
-  mode: "all" | "selected";
-  selectedDomains: string[];
+  mode: "global" | "domain-based"; // изменено с "all" | "selected"
+  // selectedDomains удалено - теперь домены привязаны к каждому прокси
 }
 
 export interface AppState {

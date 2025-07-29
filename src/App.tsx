@@ -9,7 +9,7 @@ import { StorageManager } from "./utils/storage";
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>({
     proxies: [],
-    settings: { mode: "all", selectedDomains: [] },
+    settings: { mode: "global" },
   });
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [editProxyModalOpen, setEditProxyModalOpen] = useState(false);
@@ -33,7 +33,7 @@ const App: React.FC = () => {
 
   const addProxyList = (proxyList: string, namePrefix?: string) => {
     // Process each line to extract proxy details
-    const newProxies = proxyList
+    const newProxies: ProxyEntry[] = proxyList
       .split("\n")
       .filter((line) => line.trim())
       .map((line, index) => {
@@ -45,7 +45,15 @@ const App: React.FC = () => {
           const [credentials, server] = line.split("@");
           const [login, password] = credentials.split(":");
           const [host, port] = server.split(":");
-          proxy = { active: false, host, port, login, password };
+          proxy = {
+            active: false,
+            host,
+            port,
+            login,
+            password,
+            domains: [],
+            priority: state.proxies.length + index,
+          };
         } else {
           // Format: ip:port or ip:port:login:password
           const parts = line.split(":");
@@ -57,6 +65,8 @@ const App: React.FC = () => {
               port: parts[1],
               login: "",
               password: "",
+              domains: [],
+              priority: state.proxies.length + index,
             };
           } else if (parts.length >= 4) {
             // ip:port:login:password
@@ -66,6 +76,8 @@ const App: React.FC = () => {
               port: parts[1],
               login: parts[2],
               password: parts[3],
+              domains: [],
+              priority: state.proxies.length + index,
             };
           } else {
             // Default if format doesn't match
@@ -75,6 +87,8 @@ const App: React.FC = () => {
               port: "",
               login: "",
               password: "",
+              domains: [],
+              priority: state.proxies.length + index,
             };
           }
         }
@@ -87,24 +101,51 @@ const App: React.FC = () => {
         return proxy;
       });
 
-    saveState({ ...state, proxies: [...state.proxies, ...newProxies] });
+    // Update priorities for all proxies
+    const updatedProxies = [...state.proxies, ...newProxies].map(
+      (proxy, index) => ({
+        ...proxy,
+        priority: index,
+      })
+    );
+
+    saveState({ ...state, proxies: updatedProxies });
   };
 
   const toggleProxy = (index: number) => {
-    const newProxies = state.proxies.map((proxy, i) => {
-      if (i === index) {
-        return { ...proxy, active: !proxy.active };
-      } else {
-        return { ...proxy, active: false };
-      }
-    });
-    saveState({ ...state, proxies: newProxies });
+    if (state.settings.mode === "global") {
+      // В глобальном режиме только один прокси может быть активным
+      const newProxies = state.proxies.map((proxy, i) => {
+        if (i === index) {
+          return { ...proxy, active: !proxy.active };
+        } else {
+          return { ...proxy, active: false };
+        }
+      });
+      saveState({ ...state, proxies: newProxies });
+    } else {
+      // В доменном режиме несколько прокси могут быть активными
+      const newProxies = state.proxies.map((proxy, i) => {
+        if (i === index) {
+          return { ...proxy, active: !proxy.active };
+        }
+        return proxy;
+      });
+      saveState({ ...state, proxies: newProxies });
+    }
   };
 
   const deleteProxy = (index: number) => {
     const newProxies = [...state.proxies];
     newProxies.splice(index, 1);
-    saveState({ ...state, proxies: newProxies });
+
+    // Update priorities after deletion
+    const updatedProxies = newProxies.map((proxy, i) => ({
+      ...proxy,
+      priority: i,
+    }));
+
+    saveState({ ...state, proxies: updatedProxies });
   };
 
   const openEditProxy = (index: number) => {
@@ -131,7 +172,21 @@ const App: React.FC = () => {
   };
 
   const saveSettings = (settings: ProxySettings) => {
-    saveState({ ...state, settings });
+    let newState = { ...state, settings };
+
+    // Если переключаемся в глобальный режим, оставляем только один активный прокси
+    if (settings.mode === "global") {
+      const activeProxies = state.proxies.filter((proxy) => proxy.active);
+      if (activeProxies.length > 1) {
+        const newProxies = state.proxies.map((proxy, index) => ({
+          ...proxy,
+          active: index === state.proxies.findIndex((p) => p.active),
+        }));
+        newState = { ...newState, proxies: newProxies };
+      }
+    }
+
+    saveState(newState);
   };
 
   return (
@@ -139,6 +194,7 @@ const App: React.FC = () => {
       <main className="app-content">
         <ProxyTable
           proxies={state.proxies}
+          settings={state.settings}
           toggleProxy={toggleProxy}
           openEditProxy={openEditProxy}
           openSettings={openSettings}
@@ -174,6 +230,8 @@ const App: React.FC = () => {
           }}
           proxy={state.proxies[currentProxyIndex]}
           onSave={updateProxy}
+          allProxies={state.proxies}
+          currentIndex={currentProxyIndex}
         />
       )}
     </div>

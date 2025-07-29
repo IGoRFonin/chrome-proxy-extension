@@ -1,4 +1,4 @@
-import { AppState, ProxyEntry } from "../types";
+import { AppState, ProxyEntry, ProxySettings } from "../types";
 
 export interface StorageManagerType {
   getState(): Promise<AppState>;
@@ -10,18 +10,56 @@ export interface StorageManagerType {
   migrateData(state: AppState): AppState;
 }
 
-// Migration function to handle legacy data without name field
-const migrateProxies = (proxies: ProxyEntry[]): ProxyEntry[] => {
+// Legacy settings type for migration
+interface LegacyProxySettings {
+  mode: "all" | "selected" | "global" | "domain-based";
+  selectedDomains?: string[];
+}
+
+// Migration function to handle legacy data without name field and new multi-proxy features
+const migrateProxies = (
+  proxies: ProxyEntry[],
+  legacySettings?: LegacyProxySettings
+): ProxyEntry[] => {
   return proxies.map((proxy, index) => {
-    // If proxy doesn't have a name field, add one
-    if (proxy.name === undefined) {
-      return {
-        ...proxy,
-        name: `Proxy-${index + 1}`, // Default naming pattern
-      };
+    const migratedProxy: ProxyEntry = {
+      ...proxy,
+      // Add name field if missing
+      name: proxy.name !== undefined ? proxy.name : `Proxy-${index + 1}`,
+      // Add domains field if missing
+      domains: proxy.domains !== undefined ? proxy.domains : [],
+      // Add priority field based on position in array
+      priority: proxy.priority !== undefined ? proxy.priority : index,
+    };
+
+    // If this is a legacy migration and we have selectedDomains in settings,
+    // migrate them to the active proxy
+    if (
+      legacySettings &&
+      (legacySettings.mode === "selected" || legacySettings.mode === "all") &&
+      proxy.active &&
+      legacySettings.selectedDomains
+    ) {
+      migratedProxy.domains = [...legacySettings.selectedDomains];
     }
-    return proxy;
+
+    return migratedProxy;
   });
+};
+
+// Migration function for settings
+const migrateSettings = (settings: any): ProxySettings => {
+  const migratedSettings: ProxySettings = {
+    // Map legacy modes to new modes
+    mode:
+      settings.mode === "all"
+        ? "global"
+        : settings.mode === "selected"
+        ? "domain-based"
+        : settings.mode || "global",
+  };
+
+  return migratedSettings;
 };
 
 export const StorageManager: StorageManagerType = {
@@ -70,19 +108,28 @@ export const StorageManager: StorageManagerType = {
         typeof proxy.host !== "string" ||
         typeof proxy.port !== "string" ||
         typeof proxy.login !== "string" ||
-        typeof proxy.password !== "string"
+        typeof proxy.password !== "string" ||
+        !Array.isArray(proxy.domains)
       ) {
         return false;
       }
     }
 
+    // Validate settings
+    if (!["global", "domain-based"].includes(state.settings.mode)) {
+      return false;
+    }
+
     return true;
   },
 
-  migrateData(state: AppState): AppState {
+  migrateData(state: any): AppState {
+    // Store legacy settings for proxy migration
+    const legacySettings: LegacyProxySettings = state.settings;
+
     return {
-      ...state,
-      proxies: migrateProxies(state.proxies),
+      proxies: migrateProxies(state.proxies || [], legacySettings),
+      settings: migrateSettings(state.settings || {}),
     };
   },
 

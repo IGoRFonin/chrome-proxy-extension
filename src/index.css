@@ -1,8 +1,19 @@
+html {
+    width: 800px;
+    min-width: 800px;
+}
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
-    width: 690px;
+    width: 800px;
+    min-width: 800px;
     min-height: 500px;
+}
+
+#app {
+    width: 800px;
+    min-width: 800px;
 }
 
 table {
@@ -75,6 +86,7 @@ button:hover {
 .proxy-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed !important;
 }
 
 .proxy-table th {
@@ -339,6 +351,8 @@ button:hover {
     max-width: 1200px;
     margin: 0 auto;
     padding: 24px 16px;
+    width: 700px;
+    min-width: 700px;
 }
 
 .app-header {
@@ -473,4 +487,347 @@ button:hover {
     align-items: center;
     gap: 12px;
     margin-bottom: 16px;
+}
+
+/* Multi-proxy specific styles */
+
+/* Domains column */
+.domains-cell {
+    max-width: 200px;
+}
+
+.domains-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.no-domains {
+    color: #9CA3AF;
+    font-style: italic;
+}
+
+.domain-count {
+    color: #6B7280;
+    font-size: 12px;
+}
+
+/* Domain conflicts */
+.has-conflicts {
+    background-color: #FEF2F2;
+}
+
+.conflicts-warning {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background-color: #FEF2F2;
+    color: #DC2626;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #FECACA;
+}
+
+/* Settings Modal */
+.mode-option {
+    margin-bottom: 16px;
+    padding: 12px;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.mode-option:hover {
+    background-color: #F9FAFB;
+}
+
+.mode-option label {
+    display: flex;
+    align-items: flex-start;
+}
+
+.mode-option input[type="radio"] {
+    margin-right: 12px;
+    transform: scale(1.2);
+}
+
+.mode-info {
+    margin-left: 28px;
+}
+
+.mode-info strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #111827;
+}
+
+.mode-info p {
+    margin: 0;
+    color: #6B7280;
+    font-size: 14px;
+}
+
+.mode-explanation {
+    margin-top: 20px;
+}
+
+.explanation-box {
+    background-color: #F0F9FF;
+    border: 1px solid #BAE6FD;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.explanation-box h4 {
+    margin: 0 0 12px 0;
+    color: #0369A1;
+    font-size: 16px;
+}
+
+.explanation-box ul {
+    margin: 0 0 12px 0;
+    padding-left: 20px;
+}
+
+.explanation-box li {
+    margin-bottom: 6px;
+    color: #0F172A;
+}
+
+.explanation-box p {
+    margin: 0;
+    color: #1E40AF;
+    font-weight: 500;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #E5E7EB;
+}
+
+.save-button {
+    background-color: #10B981;
+}
+
+.save-button:hover {
+    background-color: #059669;
+}
+
+.cancel-button {
+    background-color: #6B7280;
+}
+
+.cancel-button:hover {
+    background-color: #4B5563;
+}
+
+/* Edit Proxy Modal */
+.form-textarea {
+    width: 95%;
+    padding: 10px;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    resize: vertical;
+    min-height: 120px;
+}
+
+.form-textarea:focus {
+    outline: none;
+    border-color: #6366F1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.form-textarea.error {
+    border-color: #EF4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+}
+
+.help-text {
+    color: #6B7280;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+.conflicts-warning {
+    background-color: #FEF2F2;
+    border: 1px solid #FECACA;
+    border-radius: 6px;
+    padding: 12px;
+    margin-top: 8px;
+}
+
+.conflicts-warning strong {
+    color: #DC2626;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.conflicts-warning ul {
+    margin: 0 0 8px 0;
+    padding-left: 20px;
+}
+
+.conflicts-warning li {
+    color: #991B1B;
+    margin-bottom: 4px;
+}
+
+.conflicts-warning em {
+    color: #7F1D1D;
+    font-size: 13px;
+}
+
+.domain-help {
+    background-color: #F0F9FF;
+    border: 1px solid #BAE6FD;
+    border-radius: 6px;
+    padding: 12px;
+    margin-top: 12px;
+}
+
+.domain-help h5 {
+    margin: 0 0 8px 0;
+    color: #0369A1;
+    font-size: 14px;
+}
+
+.domain-help ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.domain-help li {
+    margin-bottom: 4px;
+    font-size: 13px;
+    color: #0F172A;
+}
+
+.domain-help code {
+    background-color: #E0F2FE;
+    color: #0369A1;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+}
+
+.submit-button.warning {
+    background-color: #F59E0B;
+}
+
+.submit-button.warning:hover {
+    background-color: #D97706;
+}
+
+/* Table improvements for multi-proxy */
+.proxy-table th:nth-child(1) { /* Active */
+    width: 60px !important;
+    max-width: 60px !important;
+    min-width: 60px !important;
+}
+
+.proxy-table th:nth-child(2) { /* Name */
+    width: 50px !important;
+    max-width: 50px !important;
+    min-width: 50px !important;
+}
+
+.proxy-table th:nth-child(3) { /* Host */
+    width: 140px !important;
+    max-width: 140px !important;
+    min-width: 140px !important;
+}
+
+.proxy-table th:nth-child(4) { /* Port */
+    width: 60px !important;
+    max-width: 60px !important;
+    min-width: 60px !important;
+}
+
+.proxy-table th:nth-child(5) { /* Domains */
+    width: 120px !important;
+    max-width: 120px !important;
+    min-width: 120px !important;
+}
+
+.proxy-table th:nth-child(6) { /* Actions */
+    width: 120px !important;
+    min-width: 120px !important;
+}
+
+.proxy-table td:nth-child(1) { /* Active */
+    width: 60px !important;
+    max-width: 60px !important;
+    min-width: 60px !important;
+    text-align: center;
+}
+
+.proxy-table td:nth-child(2) { /* Name */
+    width: 50px !important;
+    max-width: 50px !important;
+    min-width: 50px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.proxy-table td:nth-child(3) { /* Host */
+    width: 140px !important;
+    max-width: 140px !important;
+    min-width: 140px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.proxy-table td:nth-child(4) { /* Port */
+    width: 60px !important;
+    max-width: 60px !important;
+    min-width: 60px !important;
+    text-align: center;
+}
+
+.proxy-table td:nth-child(5) { /* Domains */
+    width: 120px !important;
+    max-width: 120px !important;
+    min-width: 120px !important;
+    word-break: break-word;
+    overflow: hidden;
+}
+
+.proxy-table td:nth-child(6) { /* Actions */
+    width: 120px !important;
+    min-width: 120px !important;
+}
+
+/* Action buttons styling */
+.action-buttons {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-start;
+}
+
+/* Responsive improvements */
+@media (max-width: 800px) {
+    body {
+        width: 100%;
+        min-width: 600px;
+    }
+
+    .proxy-table {
+        font-size: 12px;
+    }
+
+    .proxy-table th,
+    .proxy-table td {
+        padding: 6px 8px;
+    }
 }

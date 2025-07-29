@@ -6,6 +6,8 @@ interface EditProxyModalProps {
   onClose: () => void;
   proxy: ProxyEntry;
   onSave: (updatedProxy: ProxyEntry) => void;
+  allProxies?: ProxyEntry[]; // для проверки конфликтов
+  currentIndex?: number; // индекс редактируемого прокси
 }
 
 const EditProxyModal: React.FC<EditProxyModalProps> = ({
@@ -13,6 +15,8 @@ const EditProxyModal: React.FC<EditProxyModalProps> = ({
   onClose,
   proxy,
   onSave,
+  allProxies = [],
+  currentIndex = -1,
 }) => {
   const [formData, setFormData] = useState<ProxyEntry>({
     active: false,
@@ -21,18 +25,53 @@ const EditProxyModal: React.FC<EditProxyModalProps> = ({
     port: "",
     login: "",
     password: "",
+    domains: [],
+    priority: 0,
   });
 
+  const [domainsText, setDomainsText] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [domainConflicts, setDomainConflicts] = useState<string[]>([]);
 
   useEffect(() => {
     if (proxy) {
       setFormData({
         ...proxy,
         name: proxy.name || "",
+        domains: proxy.domains || [],
+        priority: proxy.priority || 0,
       });
+      setDomainsText((proxy.domains || []).join("\n"));
     }
   }, [proxy]);
+
+  // Проверка конфликтов доменов
+  useEffect(() => {
+    const currentDomains = domainsText
+      .split("\n")
+      .map((d) => d.trim())
+      .filter((d) => d !== "");
+
+    const conflicts: string[] = [];
+
+    if (allProxies.length > 0) {
+      currentDomains.forEach((domain) => {
+        allProxies.forEach((otherProxy, index) => {
+          if (
+            index !== currentIndex &&
+            otherProxy.active &&
+            otherProxy.domains.includes(domain)
+          ) {
+            const proxyName =
+              otherProxy.name || `${otherProxy.host}:${otherProxy.port}`;
+            conflicts.push(`${domain} (conflicts with ${proxyName})`);
+          }
+        });
+      });
+    }
+
+    setDomainConflicts(conflicts);
+  }, [domainsText, allProxies, currentIndex]);
 
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
@@ -45,6 +84,25 @@ const EditProxyModal: React.FC<EditProxyModalProps> = ({
       newErrors.port = "Port is required";
     } else if (!/^\d+$/.test(formData.port)) {
       newErrors.port = "Port must be a number";
+    }
+
+    // Валидация доменов
+    const domains = domainsText
+      .split("\n")
+      .map((d) => d.trim())
+      .filter((d) => d !== "");
+
+    const invalidDomains = domains.filter((domain) => {
+      // Базовая валидация домена
+      if (domain.startsWith("*.")) {
+        const baseDomain = domain.slice(2);
+        return !/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(baseDomain);
+      }
+      return !/^[a-zA-Z0-9.-]+(\.[a-zA-Z]{2,})?$/.test(domain);
+    });
+
+    if (invalidDomains.length > 0) {
+      newErrors.domains = `Invalid domains: ${invalidDomains.join(", ")}`;
     }
 
     setErrors(newErrors);
@@ -66,11 +124,30 @@ const EditProxyModal: React.FC<EditProxyModalProps> = ({
     }
   };
 
+  const handleDomainsChange = (value: string) => {
+    setDomainsText(value);
+    // Clear domain errors when user starts typing
+    if (errors.domains) {
+      setErrors((prev) => ({
+        ...prev,
+        domains: "",
+      }));
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (validateForm()) {
-      onSave(formData);
+      const domains = domainsText
+        .split("\n")
+        .map((d) => d.trim())
+        .filter((d) => d !== "");
+
+      onSave({
+        ...formData,
+        domains,
+      });
       onClose();
     }
   };
@@ -160,12 +237,75 @@ const EditProxyModal: React.FC<EditProxyModalProps> = ({
             />
           </div>
 
+          <div className="form-group">
+            <label htmlFor="domains">
+              Domains
+              <span className="help-text">
+                (one per line, supports wildcards like *.example.com)
+              </span>
+            </label>
+            <textarea
+              id="domains"
+              placeholder="example.com
+*.google.com
+github.com"
+              value={domainsText}
+              onChange={(e) => handleDomainsChange(e.target.value)}
+              className={`form-textarea ${errors.domains ? "error" : ""}`}
+              rows={6}
+            />
+            {errors.domains && (
+              <span className="error-message">{errors.domains}</span>
+            )}
+
+            {domainConflicts.length > 0 && (
+              <div className="conflicts-warning">
+                <strong>⚠️ Domain Conflicts:</strong>
+                <ul>
+                  {domainConflicts.map((conflict, index) => (
+                    <li key={index}>{conflict}</li>
+                  ))}
+                </ul>
+                <p>
+                  <em>
+                    Higher priority proxy (earlier in list) will be used for
+                    conflicting domains.
+                  </em>
+                </p>
+              </div>
+            )}
+
+            <div className="domain-help">
+              <h5>Domain Examples:</h5>
+              <ul>
+                <li>
+                  <code>example.com</code> - matches exactly example.com
+                </li>
+                <li>
+                  <code>*.example.com</code> - matches all subdomains of
+                  example.com
+                </li>
+                <li>
+                  <code>*.google.com</code> - matches www.google.com,
+                  mail.google.com, etc.
+                </li>
+              </ul>
+            </div>
+          </div>
+
           <div className="modal-actions">
             <button type="button" className="cancel-button" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="submit-button">
-              Save Changes
+            <button
+              type="submit"
+              className={`submit-button ${
+                domainConflicts.length > 0 ? "warning" : ""
+              }`}
+            >
+              {domainConflicts.length > 0
+                ? "Save (with conflicts)"
+                : "Save Changes"}
             </button>
           </div>
         </form>
