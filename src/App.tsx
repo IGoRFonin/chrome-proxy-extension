@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import ProxyTable from "./components/ProxyTable";
 import AddProxyForm from "./components/AddProxyForm";
 import SettingsModal from "./components/SettingsModal";
+import EditProxyModal from "./components/EditProxyModal";
 import { ProxyEntry, ProxySettings, AppState } from "./types";
 import { StorageManager } from "./utils/storage";
 
@@ -11,6 +12,7 @@ const App: React.FC = () => {
     settings: { mode: "all", selectedDomains: [] },
   });
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [editProxyModalOpen, setEditProxyModalOpen] = useState(false);
   const [currentProxyIndex, setCurrentProxyIndex] = useState<number | null>(
     null
   );
@@ -29,25 +31,27 @@ const App: React.FC = () => {
     await StorageManager.setState(newState);
   };
 
-  const addProxyList = (proxyList: string) => {
+  const addProxyList = (proxyList: string, namePrefix?: string) => {
     // Process each line to extract proxy details
     const newProxies = proxyList
       .split("\n")
       .filter((line) => line.trim())
-      .map((line) => {
+      .map((line, index) => {
         // Handle different formats
+        let proxy: ProxyEntry;
+
         if (line.includes("@")) {
           // Format: login:password@ip:port
           const [credentials, server] = line.split("@");
           const [login, password] = credentials.split(":");
           const [host, port] = server.split(":");
-          return { active: false, host, port, login, password };
+          proxy = { active: false, host, port, login, password };
         } else {
           // Format: ip:port or ip:port:login:password
           const parts = line.split(":");
           if (parts.length === 2) {
             // ip:port
-            return {
+            proxy = {
               active: false,
               host: parts[0],
               port: parts[1],
@@ -56,23 +60,31 @@ const App: React.FC = () => {
             };
           } else if (parts.length >= 4) {
             // ip:port:login:password
-            return {
+            proxy = {
               active: false,
               host: parts[0],
               port: parts[1],
               login: parts[2],
               password: parts[3],
             };
+          } else {
+            // Default if format doesn't match
+            proxy = {
+              active: false,
+              host: line,
+              port: "",
+              login: "",
+              password: "",
+            };
           }
-          // Default if format doesn't match
-          return {
-            active: false,
-            host: line,
-            port: "",
-            login: "",
-            password: "",
-          };
         }
+
+        // Add auto-generated name if prefix provided
+        if (namePrefix) {
+          proxy.name = `${namePrefix}-${index + 1}`;
+        }
+
+        return proxy;
       });
 
     saveState({ ...state, proxies: [...state.proxies, ...newProxies] });
@@ -95,8 +107,26 @@ const App: React.FC = () => {
     saveState({ ...state, proxies: newProxies });
   };
 
-  const openSettings = (index: number) => {
+  const openEditProxy = (index: number) => {
     setCurrentProxyIndex(index);
+    setEditProxyModalOpen(true);
+  };
+
+  const updateProxy = (updatedProxy: ProxyEntry) => {
+    if (currentProxyIndex !== null) {
+      const newProxies = [...state.proxies];
+      newProxies[currentProxyIndex] = updatedProxy;
+      saveState({ ...state, proxies: newProxies });
+    }
+  };
+
+  const updateProxyName = (index: number, name: string) => {
+    const newProxies = [...state.proxies];
+    newProxies[index] = { ...newProxies[index], name };
+    saveState({ ...state, proxies: newProxies });
+  };
+
+  const openSettings = () => {
     setSettingsModalOpen(true);
   };
 
@@ -110,9 +140,11 @@ const App: React.FC = () => {
         <ProxyTable
           proxies={state.proxies}
           toggleProxy={toggleProxy}
+          openEditProxy={openEditProxy}
           openSettings={openSettings}
           deleteProxy={deleteProxy}
           addProxy={() => setAddProxyModalOpen(true)}
+          updateProxyName={updateProxyName}
         />
 
         {addProxyModalOpen && (
@@ -130,6 +162,18 @@ const App: React.FC = () => {
           onClose={() => setSettingsModalOpen(false)}
           settings={state.settings}
           onSave={saveSettings}
+        />
+      )}
+
+      {editProxyModalOpen && currentProxyIndex !== null && (
+        <EditProxyModal
+          isOpen={editProxyModalOpen}
+          onClose={() => {
+            setEditProxyModalOpen(false);
+            setCurrentProxyIndex(null);
+          }}
+          proxy={state.proxies[currentProxyIndex]}
+          onSave={updateProxy}
         />
       )}
     </div>

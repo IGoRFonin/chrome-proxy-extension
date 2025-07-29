@@ -1,5 +1,6 @@
 export interface ProxyEntry {
   active: boolean;
+  name?: string;
   host: string;
   port: string;
   login: string;
@@ -7,7 +8,7 @@ export interface ProxyEntry {
 }
 
 export interface ProxySettings {
-  mode: 'all' | 'selected';
+  mode: "all" | "selected";
   selectedDomains: string[];
 }
 

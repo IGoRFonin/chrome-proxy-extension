@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { ProxyEntry } from "../types";
 
 interface AddProxyFormProps {
-  addProxyList: (proxyList: string) => void;
+  addProxyList: (proxyList: string, namePrefix?: string) => void;
   isOpen?: boolean;
   onClose?: () => void;
 }
@@ -13,6 +13,7 @@ const AddProxyForm: React.FC<AddProxyFormProps> = ({
   onClose,
 }) => {
   const [proxyList, setProxyList] = useState("");
+  const [namePrefix, setNamePrefix] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Use the prop value if provided, otherwise use local state
@@ -24,12 +25,16 @@ const AddProxyForm: React.FC<AddProxyFormProps> = ({
     } else {
       setIsModalOpen(false);
     }
+    // Reset form
+    setProxyList("");
+    setNamePrefix("");
   };
 
   const handleAddProxyList = (e: React.FormEvent) => {
     e.preventDefault();
-    addProxyList(proxyList);
+    addProxyList(proxyList, namePrefix.trim() || undefined);
     setProxyList("");
+    setNamePrefix("");
     handleClose();
   };
 
@@ -57,6 +62,22 @@ const AddProxyForm: React.FC<AddProxyFormProps> = ({
             </div>
 
             <form onSubmit={handleAddProxyList}>
+              <div className="form-group">
+                <label htmlFor="namePrefix">Name Prefix (optional)</label>
+                <input
+                  id="namePrefix"
+                  type="text"
+                  placeholder="e.g., US, Germany, Office"
+                  value={namePrefix}
+                  onChange={(e) => setNamePrefix(e.target.value)}
+                  className="form-input"
+                />
+                <small className="form-hint">
+                  If provided, proxies will be named as:{" "}
+                  {namePrefix || "Prefix"}-1, {namePrefix || "Prefix"}-2, etc.
+                </small>
+              </div>
+
               <div className="form-group">
                 <label htmlFor="proxyList">Proxy List</label>
                 <textarea

@@ -334,12 +334,6 @@ button:hover {
     background-color: #4F46E5;
 }
 
-.add-proxy-container {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 16px;
-}
-
 /* App Container */
 .app-container {
     max-width: 1200px;
@@ -373,4 +367,110 @@ button:hover {
 
 .proxy-settings-container {
     margin-bottom: 12px;
+}
+
+/* Name Cell Styling */
+.name-cell {
+    cursor: pointer;
+    position: relative;
+}
+
+.name-display {
+    display: block;
+    width: 100%;
+    min-height: 20px;
+}
+
+.no-name {
+    color: #9CA3AF;
+    font-style: italic;
+    font-size: 13px;
+}
+
+.name-input {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid #6366F1;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    background-color: white;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.name-input:focus {
+    outline: none;
+    border-color: #6366F1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+/* Settings Button */
+.settings-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #F9FAFB;
+    color: #4B5563;
+    border: 1px solid #D1D5DB;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.settings-button:hover {
+    background-color: #F3F4F6;
+    border-color: #9CA3AF;
+}
+
+/* Form Input */
+.form-input {
+    width: 95%;
+    padding: 10px;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #6366F1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.form-input.error {
+    border-color: #EF4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+}
+
+.form-hint {
+    display: block;
+    margin-top: 4px;
+    color: #6B7280;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.error-message {
+    display: block;
+    color: #EF4444;
+    font-size: 13px;
+    margin-top: 4px;
+}
+
+.required {
+    color: #EF4444;
+}
+
+/* Update add-proxy-container to flex with gap */
+.add-proxy-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
 }
