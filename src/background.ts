@@ -160,7 +160,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
   // Handle overlay controls
   if (info.menuItemId === "showOverlay") {
-    console.log("🎯 Context menu: Show overlay clicked");
     if (tab?.id) {
       chrome.tabs
         .sendMessage(tab.id, {
@@ -431,22 +430,8 @@ async function handleContentScriptMessage(
     switch (message.type) {
       case "GET_CURRENT_DOMAINS":
         if (sender.tab?.id) {
-          console.log(
-            `🔍 GET_CURRENT_DOMAINS request for tab ${sender.tab.id}`
-          );
           const domains = domainTracker.getDomainsForTab(sender.tab.id);
-          console.log(
-            `📊 Raw domains from tracker:`,
-            domains.map((d) => ({ domain: d.domain, category: d.category }))
-          );
           const domainsWithColors = await enrichDomainsWithProxyInfo(domains);
-          console.log(
-            `📊 Enriched domains:`,
-            domainsWithColors.map((d) => ({
-              domain: d.domain,
-              proxyId: d.proxyId,
-            }))
-          );
           sendResponse({ domains: domainsWithColors });
         }
         break;
@@ -485,46 +470,14 @@ async function handleContentScriptMessage(
 async function enrichDomainsWithProxyInfo(
   domains: DomainInfo[]
 ): Promise<DomainInfo[]> {
-  console.log(`🎨 Starting to enrich ${domains.length} domains...`);
-
   const state = await StorageManager.getState();
 
-  console.log("🎨 Enriching domains with proxy info. Current state:", {
-    mode: state.settings.mode,
-    totalProxies: state.proxies.length,
-    activeProxies: state.proxies.filter((p) => p.active).length,
-    allProxies: state.proxies.map((p) => ({
-      id: generateProxyId(p),
-      active: p.active,
-      domains: p.domains,
-      name: p.name,
-    })),
-    proxiesWithDomains: state.proxies
-      .filter((p) => p.active && p.domains.length > 0)
-      .map((p) => ({
-        id: generateProxyId(p),
-        domains: p.domains,
-      })),
-  });
-
-  if (state.proxies.length === 0) {
-    console.warn("⚠️ No proxies found in state!");
-  }
-
-  if (state.proxies.filter((p) => p.active).length === 0) {
-    console.warn("⚠️ No active proxies found!");
-  }
-
   return domains.map((domain) => {
-    console.log(`🔍 Processing domain: ${domain.domain}`);
-
     // Определяем какой прокси используется для этого домена
     const proxyId = findProxyForDomain(domain.domain, state);
     const color = proxyId
       ? ColorGenerator.getColorForProxy(proxyId)
       : undefined;
-
-    console.log(`🎨 Domain ${domain.domain} → Proxy: ${proxyId || "DIRECT"}`);
 
     return {
       ...domain,
@@ -538,37 +491,23 @@ function findProxyForDomain(
   domain: string,
   state: AppState
 ): string | undefined {
-  console.log(
-    `🔍 Finding proxy for domain: ${domain}, mode: ${state.settings.mode}`
-  );
-
   if (state.settings.mode === "global") {
     const activeProxy = state.proxies.find((proxy) => proxy.active);
     const result = activeProxy ? generateProxyId(activeProxy) : undefined;
-    console.log(`📋 Global mode result: ${result}`);
     return result;
   } else {
     // Domain-based mode
-    console.log(
-      `📋 Active proxies: ${state.proxies.filter((p) => p.active).length}`
-    );
 
     for (const proxy of state.proxies) {
       if (!proxy.active) continue;
 
-      console.log(
-        `🔎 Checking proxy ${generateProxyId(proxy)} with domains:`,
-        proxy.domains
-      );
-
       for (const proxyDomain of proxy.domains) {
         if (proxyDomain.startsWith("*.")) {
-          const suffix = proxyDomain.substr(1);
-          if (domain.endsWith(suffix)) {
+          // Убираем "*.* и оставляем суффикс
+          const suffix = proxyDomain.slice(2); // "*.youtube.com" → "youtube.com"
+
+          if (domain === suffix || domain.endsWith("." + suffix)) {
             const result = generateProxyId(proxy);
-            console.log(
-              `✅ Match found (wildcard): ${domain} matches ${proxyDomain} → ${result}`
-            );
             return result;
           }
         } else if (
@@ -576,16 +515,12 @@ function findProxyForDomain(
           domain.endsWith("." + proxyDomain)
         ) {
           const result = generateProxyId(proxy);
-          console.log(
-            `✅ Match found (exact): ${domain} matches ${proxyDomain} → ${result}`
-          );
           return result;
         }
       }
     }
   }
 
-  console.log(`❌ No proxy found for ${domain} → DIRECT`);
   return undefined; // DIRECT connection
 }
 
@@ -639,7 +574,6 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === "local" && changes.appState) {
     const newState = changes.appState.newValue;
-    console.log("Storage updated:", newState);
   }
 });
 

@@ -16,7 +16,6 @@ class DomainOverlayManager {
   private domainRefreshInterval: number | null = null;
 
   constructor() {
-    console.log("🔵 Domain Overlay Manager initialized");
     this.init();
   }
 
@@ -35,10 +34,6 @@ class DomainOverlayManager {
     // Слушаем изменения в storage для синхронизации с popup
     chrome.storage.onChanged.addListener((changes, namespace) => {
       if (namespace === "local" && changes.appState) {
-        console.log("🔄 Storage changed, updating overlay...");
-        console.log("🔄 Old value:", changes.appState.oldValue);
-        console.log("🔄 New value:", changes.appState.newValue);
-
         // Отменяем предыдущее обновление если оно еще не выполнилось
         if (this.updateTimeout) {
           clearTimeout(this.updateTimeout);
@@ -46,8 +41,6 @@ class DomainOverlayManager {
 
         // Добавляем задержку для debounce множественных изменений
         this.updateTimeout = window.setTimeout(async () => {
-          console.log("🔄 Executing delayed storage update...");
-
           // Обновляем список доступных прокси
           await this.loadAvailableProxies();
 
@@ -91,7 +84,6 @@ class DomainOverlayManager {
   }
 
   private handleMessage(message: OverlayMessage) {
-    console.log("📨 Content script received message:", message.type);
     switch (message.type) {
       case "SHOW_OVERLAY":
         this.showOverlay();
@@ -102,9 +94,6 @@ class DomainOverlayManager {
       case "UPDATE_DOMAINS":
         // УДАЛЕНО: больше не обрабатываем прямые UPDATE_DOMAINS от domainTracker
         // Вместо этого запрашиваем свежие данные с обогащением
-        console.log(
-          "🚫 Ignoring UPDATE_DOMAINS, requesting fresh data instead..."
-        );
         this.requestCurrentDomains();
         break;
       case "ASSIGN_DOMAIN_TO_PROXY":
@@ -115,21 +104,13 @@ class DomainOverlayManager {
 
   private async loadAvailableProxies() {
     try {
-      console.log("🔄 Loading available proxies...");
-
       // Запрашиваем доступные прокси
       const proxiesResponse = await chrome.runtime.sendMessage({
         type: "GET_AVAILABLE_PROXIES",
       });
 
-      console.log("📥 Proxies response:", proxiesResponse);
-
       if (proxiesResponse?.proxies) {
-        const oldProxiesCount = this.availableProxies.length;
         this.availableProxies = proxiesResponse.proxies;
-        console.log(
-          `📥 Updated available proxies: ${oldProxiesCount} → ${this.availableProxies.length}`
-        );
       }
     } catch (error) {
       console.error("Failed to load available proxies:", error);
@@ -138,14 +119,10 @@ class DomainOverlayManager {
 
   private async requestCurrentDomains() {
     try {
-      console.log("🔄 Requesting current domains...");
-
       // Запрашиваем текущие домены
       const domainsResponse = await chrome.runtime.sendMessage({
         type: "GET_CURRENT_DOMAINS",
       });
-
-      console.log("📥 Domains response:", domainsResponse);
 
       if (domainsResponse?.domains) {
         this.updateDomains(domainsResponse.domains);
@@ -156,10 +133,7 @@ class DomainOverlayManager {
   }
 
   private async showOverlay() {
-    console.log("🟢 Showing domain overlay");
-
     // Обновляем данные перед показом
-    console.log("🔄 Loading fresh data before showing overlay...");
     await this.loadAvailableProxies();
     await this.requestCurrentDomains();
 
@@ -376,9 +350,6 @@ class DomainOverlayManager {
       options += `<option value="${proxy.id}" ${selected}>${proxy.name}</option>`;
     });
 
-    console.log(
-      `🎯 Generating options for domain with proxyId: ${currentProxyId}, isDirectSelected: ${isDirectSelected}`
-    );
     return options;
   }
 
@@ -886,7 +857,6 @@ class DomainOverlayManager {
         e.stopPropagation();
         const group = (e.currentTarget as HTMLElement).closest(".domain-group");
         group?.classList.toggle("collapsed");
-        console.log("🔽 Group toggled, NOT updating content");
       });
     });
   }
@@ -910,7 +880,6 @@ class DomainOverlayManager {
           ".domain-subgroup"
         );
         subgroup?.classList.toggle("collapsed");
-        console.log("🔽 Subgroup toggled");
       });
     });
   }
@@ -1072,30 +1041,21 @@ class DomainOverlayManager {
     // Обновляем домены каждые 3 секунды когда overlay видим
     this.domainRefreshInterval = window.setInterval(() => {
       if (this.isVisible) {
-        console.log("⏰ Periodic domain refresh...");
         this.requestCurrentDomains();
       }
     }, 3000);
-
-    console.log("▶️ Started domain refresh interval");
   }
 
   private stopDomainRefresh() {
     if (this.domainRefreshInterval) {
       clearInterval(this.domainRefreshInterval);
       this.domainRefreshInterval = null;
-      console.log("⏸️ Stopped domain refresh interval");
     }
   }
 
   private updateDomains(domains: DomainInfo[]) {
-    console.log(
-      "🔄 Updating domains:",
-      domains.map((d) => ({ domain: d.domain, proxyId: d.proxyId }))
-    );
     this.domains = domains;
     if (this.isVisible && this.overlay) {
-      console.log("🔄 Overlay is visible, updating content...");
       this.updateOverlayContent();
     }
 
