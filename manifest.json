@@ -1,32 +1,37 @@
 {
-    "manifest_version": 3,
-    "name": "Proxy Manager",
-    "version": "1.0",
-    "description": "Manage your proxy servers",
-    "permissions": [
-      "storage",
-      "proxy",
-      "webRequest",
-      "contextMenus",
-      "webRequestAuthProvider"
-    ],
-    "host_permissions": [
-      "<all_urls>"
-    ],
-    "action": {
-      "default_popup": "popup.html",
-      "default_icon": {
-        "128": "icon-128.png"
-      }
-    },
-    "background": {
-      "service_worker": "background.js",
-      "type": "module"
-    },
-    "icons": {
-      "128": "icon-128.png"
-    },
-    "storage": {
-      "managed_schema": "schema.json"
+  "manifest_version": 3,
+  "name": "Proxy Manager",
+  "version": "1.1",
+  "description": "Manage your proxy servers",
+  "permissions": [
+    "storage",
+    "proxy",
+    "webRequest",
+    "contextMenus",
+    "webRequestAuthProvider"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-script.js"],
+      "run_at": "document_end"
     }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "128": "icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "icons": {
+    "128": "icon-128.png"
+  },
+  "storage": {
+    "managed_schema": "schema.json"
   }
+}

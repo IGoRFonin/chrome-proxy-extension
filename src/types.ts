@@ -17,4 +17,32 @@ export interface ProxySettings {
 export interface AppState {
   proxies: ProxyEntry[];
   settings: ProxySettings;
+  overlayState?: OverlayState;
+}
+
+export interface OverlayState {
+  visible: boolean;
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  expanded: boolean;
+}
+
+export interface DomainInfo {
+  domain: string;
+  proxyId?: string; // ID прокси который используется
+  category: DomainCategory;
+  requestCount: number;
+  lastSeen: number;
+  color?: string; // цвет для визуализации
+}
+
+export type DomainCategory = "main" | "analytics" | "cdn" | "ads" | "other";
+
+export interface OverlayMessage {
+  type:
+    | "SHOW_OVERLAY"
+    | "HIDE_OVERLAY"
+    | "UPDATE_DOMAINS"
+    | "ASSIGN_DOMAIN_TO_PROXY";
+  data?: any;
 }
