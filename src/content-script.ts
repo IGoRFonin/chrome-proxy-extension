@@ -10,13 +10,57 @@ class DomainOverlayManager {
     visible: false,
     position: { x: 20, y: 20 }, // от правого нижнего угла
     size: { width: 400, height: 500 },
-    expanded: false,
+    expanded: true, // Изначально развернут
   };
   private updateTimeout: number | null = null;
   private domainRefreshInterval: number | null = null;
 
+  // Performance optimization properties
+  private domainElementCache = new Map<string, HTMLElement>();
+  private lastDomainHash = "";
+  private pendingUpdate = false;
+  private updateFrame: number | null = null;
+  private virtualizedDomains: Map<string, HTMLElement> = new Map();
+  private visibleRange = { start: 0, end: 50 };
+  private intersectionObserver: IntersectionObserver | null = null;
+  private currentInterval = 3000;
+  private lastUpdateTime = 0;
+  private static stylesInjected = false;
+
   constructor() {
     this.init();
+  }
+
+  // Cleanup method for memory management
+  public destroy() {
+    this.stopDomainRefresh();
+
+    if (this.updateFrame) {
+      cancelAnimationFrame(this.updateFrame);
+      this.updateFrame = null;
+    }
+
+    if (this.updateTimeout) {
+      clearTimeout(this.updateTimeout);
+      this.updateTimeout = null;
+    }
+
+    if (this.intersectionObserver) {
+      this.intersectionObserver.disconnect();
+      this.intersectionObserver = null;
+    }
+
+    // Clear caches
+    this.domainElementCache.clear();
+    this.virtualizedDomains.clear();
+
+    if (this.overlay) {
+      this.overlay.remove();
+      this.overlay = null;
+    }
+
+    this.domains = [];
+    this.availableProxies = [];
   }
 
   private init() {
@@ -178,6 +222,32 @@ class DomainOverlayManager {
     this.addEventListeners();
     document.body.appendChild(this.overlay);
     this.positionOverlay();
+
+    // Сразу создаем структуру категорий и домены
+    this.initializeOverlayContent();
+  }
+
+  private initializeOverlayContent() {
+    if (!this.overlay) return;
+
+    const content = this.overlay.querySelector(".overlay-content");
+    if (!content) return;
+
+    // Устанавливаем правильные классы для контента
+    content.className = `overlay-content ${
+      this.overlayState.expanded ? "expanded" : "collapsed"
+    }`;
+
+    // Создаем структуру категорий только если контент развернут
+    if (this.overlayState.expanded) {
+      content.innerHTML = this.renderDomains();
+
+      // Затем используем differential updates для добавления доменов
+      // Используем setTimeout чтобы DOM успел обновиться
+      setTimeout(() => {
+        this.performDifferentialUpdate();
+      }, 0);
+    }
   }
 
   private getOverlayHTML(): string {
@@ -209,8 +279,7 @@ class DomainOverlayManager {
     let html = "";
 
     for (const [category, domains] of Object.entries(groupedDomains)) {
-      if (domains.length === 0) continue;
-
+      // Создаем категорию даже если в ней пока нет доменов
       html += `
         <div class="domain-group">
           <div class="domain-group-header" data-category="${category}">
@@ -219,9 +288,7 @@ class DomainOverlayManager {
             <span class="group-count">(${domains.length})</span>
             <span class="group-toggle">▼</span>
           </div>
-          <div class="domain-group-content">
-            ${this.renderCategoryContent(domains)}
-          </div>
+          <div class="domain-group-content"></div>
         </div>
       `;
     }
@@ -277,64 +344,13 @@ class DomainOverlayManager {
   }
 
   private renderCategoryContent(domains: DomainInfo[]): string {
-    if (!this.shouldGroupDomains(domains)) {
-      // Если нет смысла группировать, показываем как обычно
-      return domains.map((domain) => this.renderDomain(domain)).join("");
-    }
-
-    // Группируем по основному домену
-    const baseGroups = this.groupDomainsByBase(domains);
-    let html = "";
-
-    for (const [baseDomain, domainList] of Object.entries(baseGroups)) {
-      if (domainList.length === 1) {
-        // Один домен - показываем как обычно
-        html += this.renderDomain(domainList[0]);
-      } else {
-        // Несколько поддоменов - создаем подгруппу
-        html += `
-          <div class="domain-subgroup">
-            <div class="domain-subgroup-header">
-              <span class="subgroup-icon">🔗</span>
-              <span class="subgroup-title">*.${baseDomain}</span>
-              <span class="subgroup-count">(${domainList.length})</span>
-              <div class="subgroup-actions">
-                <button class="add-wildcard-btn" data-domain="${baseDomain}" title="Add *.${baseDomain} to proxy">
-                  + Add *.${baseDomain}
-                </button>
-              </div>
-              <span class="subgroup-toggle">▼</span>
-            </div>
-            <div class="domain-subgroup-content">
-              ${domainList.map((domain) => this.renderDomain(domain)).join("")}
-            </div>
-          </div>
-        `;
-      }
-    }
-
-    return html;
+    // Этот метод теперь не используется - контент создается через differential updates
+    return "";
   }
 
   private renderDomain(domain: DomainInfo): string {
-    const proxyIndicator = domain.proxyId
-      ? `<span class="proxy-indicator" style="background-color: ${
-          domain.color || "#666"
-        }" title="Proxy: ${domain.proxyId}"></span>`
-      : `<span class="proxy-indicator direct" title="Direct connection">D</span>`;
-
-    return `
-      <div class="domain-item" data-domain="${domain.domain}">
-        ${proxyIndicator}
-        <span class="domain-name">${domain.domain}</span>
-        <span class="request-count">${domain.requestCount}</span>
-        <div class="domain-actions">
-          <select class="proxy-selector">
-            ${this.getAllProxyOptions(domain.proxyId)}
-          </select>
-        </div>
-      </div>
-    `;
+    // Этот метод теперь не используется - используется createDomainElement
+    return "";
   }
 
   private getAllProxyOptions(currentProxyId?: string): string {
@@ -387,7 +403,7 @@ class DomainOverlayManager {
   }
 
   private styleOverlay() {
-    if (!this.overlay) return;
+    if (DomainOverlayManager.stylesInjected) return;
 
     const styles = `
       #proxy-domain-overlay {
@@ -405,6 +421,11 @@ class DomainOverlayManager {
         max-width: 600px;
         resize: both;
         overflow: hidden;
+
+        /* GPU acceleration for better performance */
+        transform: translateZ(0);
+        will-change: transform;
+        contain: layout style paint;
       }
 
       .domain-subgroup {
@@ -529,6 +550,11 @@ class DomainOverlayManager {
         max-height: 500px;
         overflow-y: auto;
         transition: all 0.2s ease;
+
+        /* Optimize scrolling performance */
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        contain: layout;
       }
 
       .overlay-content.collapsed {
@@ -608,6 +634,10 @@ class DomainOverlayManager {
         padding: 8px 15px;
         border-bottom: 1px solid #f5f5f5;
         transition: background 0.2s ease;
+
+        /* Performance optimizations */
+        contain: layout;
+        will-change: auto;
       }
 
       .domain-item:hover {
@@ -728,27 +758,147 @@ class DomainOverlayManager {
     const styleSheet = document.createElement("style");
     styleSheet.textContent = styles;
     document.head.appendChild(styleSheet);
+
+    DomainOverlayManager.stylesInjected = true;
   }
 
   private addEventListeners() {
     if (!this.overlay) return;
 
-    // Закрытие overlay
-    const closeBtn = this.overlay.querySelector(".close-btn");
-    closeBtn?.addEventListener("click", () => this.hideOverlay());
-
-    // Разворачивание/сворачивание
-    const expandBtn = this.overlay.querySelector(".expand-btn");
-    expandBtn?.addEventListener("click", () => this.toggleExpanded());
+    // Event delegation вместо множественных listeners
+    this.setupEventDelegation();
 
     // Перетаскивание
     this.makeDraggable();
 
-    // Группировка доменов
-    this.addGroupToggleListeners();
+    // Intersection Observer для lazy loading
+    this.setupIntersectionObserver();
+  }
 
-    // Изменение прокси для домена
-    this.addProxyChangeListeners();
+  // Event delegation for better performance
+  private setupEventDelegation() {
+    if (!this.overlay) return;
+
+    // Единый обработчик кликов
+    this.overlay.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+
+      if (target.classList.contains("close-btn")) {
+        this.hideOverlay();
+      } else if (target.classList.contains("expand-btn")) {
+        this.toggleExpanded();
+      } else if (target.classList.contains("domain-group-header")) {
+        this.toggleGroup(target);
+      } else if (target.classList.contains("domain-subgroup-header")) {
+        this.toggleSubgroup(target, e);
+      } else if (target.classList.contains("add-wildcard-btn")) {
+        const baseDomain = target.getAttribute("data-domain");
+        if (baseDomain) {
+          this.showWildcardProxyModal(baseDomain);
+        }
+        e.stopPropagation();
+      }
+    });
+
+    // Единый обработчик изменений
+    this.overlay.addEventListener("change", (e) => {
+      const target = e.target as HTMLSelectElement;
+      if (target.classList.contains("proxy-selector")) {
+        this.handleProxyChange(target);
+      }
+    });
+  }
+
+  private toggleGroup(target: HTMLElement) {
+    const group = target.closest(".domain-group");
+    group?.classList.toggle("collapsed");
+  }
+
+  private toggleSubgroup(target: HTMLElement, e: Event) {
+    // Не обрабатываем клик если это кнопка
+    if ((e.target as HTMLElement).classList.contains("add-wildcard-btn")) {
+      return;
+    }
+
+    const subgroup = target.closest(".domain-subgroup");
+    subgroup?.classList.toggle("collapsed");
+  }
+
+  private handleProxyChange(selector: HTMLSelectElement) {
+    const domainItem = selector.closest(".domain-item");
+    const domain = domainItem?.getAttribute("data-domain");
+
+    if (domain) {
+      this.assignDomainToProxy(domain, selector.value);
+    }
+  }
+
+  private setupIntersectionObserver() {
+    this.intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const domain = entry.target.getAttribute("data-domain");
+            if (domain) {
+              this.loadDomainDetails(domain);
+            }
+          }
+        });
+      },
+      {
+        root: this.overlay?.querySelector(".overlay-content"),
+        rootMargin: "50px",
+        threshold: 0.1,
+      }
+    );
+
+    // Добавляем обработчик скролла для виртуализации
+    this.addScrollHandler();
+  }
+
+  private addScrollHandler() {
+    const content = this.overlay?.querySelector(".overlay-content");
+    if (!content) return;
+
+    let scrollTimeout: number | null = null;
+
+    content.addEventListener("scroll", () => {
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+
+      scrollTimeout = window.setTimeout(() => {
+        this.updateVirtualizedRange();
+        scrollTimeout = null;
+      }, 100);
+    });
+  }
+
+  private updateVirtualizedRange() {
+    if (this.domains.length <= 100) return; // Виртуализация только для больших списков
+
+    const content = this.overlay?.querySelector(".overlay-content");
+    if (!content) return;
+
+    const scrollTop = content.scrollTop;
+    const clientHeight = content.clientHeight;
+    const itemHeight = 40; // Примерная высота элемента
+
+    const start = Math.max(0, Math.floor(scrollTop / itemHeight) - 5);
+    const end = Math.min(
+      this.domains.length,
+      start + Math.ceil(clientHeight / itemHeight) + 10
+    );
+
+    if (start !== this.visibleRange.start || end !== this.visibleRange.end) {
+      this.visibleRange = { start, end };
+      this.scheduleUpdate();
+    }
+  }
+
+  private loadDomainDetails(domain: string) {
+    // Lazy loading логика для дополнительных деталей домена
+    // Пока заглушка, можно расширить в будущем
   }
 
   private toggleExpanded() {
@@ -768,13 +918,11 @@ class DomainOverlayManager {
         this.overlayState.expanded ? "expanded" : "collapsed"
       }`;
       expandBtn.textContent = this.overlayState.expanded ? "−" : "+";
-      content.innerHTML = this.renderDomains();
 
-      // Переподключаем листенеры после обновления содержимого
-      this.addGroupToggleListeners();
-      this.addSubgroupToggleListeners();
-      this.addWildcardButtonListeners();
-      this.addProxyChangeListeners();
+      // Если контент разворачивается, инициализируем его
+      if (this.overlayState.expanded) {
+        this.initializeOverlayContent();
+      }
     }
   }
 
@@ -845,79 +993,6 @@ class DomainOverlayManager {
       this.overlay.style.width = `${this.overlayState.size.width}px`;
       this.overlay.style.height = `${this.overlayState.size.height}px`;
     }
-  }
-
-  private addGroupToggleListeners() {
-    if (!this.overlay) return;
-
-    const groupHeaders = this.overlay.querySelectorAll(".domain-group-header");
-    groupHeaders.forEach((header) => {
-      header.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const group = (e.currentTarget as HTMLElement).closest(".domain-group");
-        group?.classList.toggle("collapsed");
-      });
-    });
-  }
-
-  private addSubgroupToggleListeners() {
-    if (!this.overlay) return;
-
-    const subgroupHeaders = this.overlay.querySelectorAll(
-      ".domain-subgroup-header"
-    );
-    subgroupHeaders.forEach((header) => {
-      header.addEventListener("click", (e) => {
-        // Не обрабатываем клик если это кнопка
-        if ((e.target as HTMLElement).classList.contains("add-wildcard-btn")) {
-          return;
-        }
-
-        e.preventDefault();
-        e.stopPropagation();
-        const subgroup = (e.currentTarget as HTMLElement).closest(
-          ".domain-subgroup"
-        );
-        subgroup?.classList.toggle("collapsed");
-      });
-    });
-  }
-
-  private addWildcardButtonListeners() {
-    if (!this.overlay) return;
-
-    const wildcardBtns = this.overlay.querySelectorAll(".add-wildcard-btn");
-    wildcardBtns.forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const baseDomain = (e.target as HTMLElement).getAttribute(
-          "data-domain"
-        );
-        if (baseDomain) {
-          this.showWildcardProxyModal(baseDomain);
-        }
-      });
-    });
-  }
-
-  private addProxyChangeListeners() {
-    if (!this.overlay) return;
-
-    const selectors = this.overlay.querySelectorAll(".proxy-selector");
-    selectors.forEach((selector) => {
-      selector.addEventListener("change", (e) => {
-        const select = e.target as HTMLSelectElement;
-        const domainItem = select.closest(".domain-item");
-        const domain = domainItem?.getAttribute("data-domain");
-
-        if (domain) {
-          this.assignDomainToProxy(domain, select.value);
-        }
-      });
-    });
   }
 
   private showWildcardProxyModal(baseDomain: string) {
@@ -1038,34 +1113,293 @@ class DomainOverlayManager {
     // Останавливаем предыдущий интервал если есть
     this.stopDomainRefresh();
 
-    // Обновляем домены каждые 3 секунды когда overlay видим
-    this.domainRefreshInterval = window.setInterval(() => {
+    // Начинаем с базового интервала
+    this.currentInterval = 3000;
+    this.scheduleNextRefresh();
+  }
+
+  private scheduleNextRefresh() {
+    this.domainRefreshInterval = window.setTimeout(() => {
       if (this.isVisible) {
         this.requestCurrentDomains();
+        this.adaptiveRefreshInterval();
+        this.scheduleNextRefresh();
       }
-    }, 3000);
+    }, this.currentInterval);
+  }
+
+  private adaptiveRefreshInterval() {
+    const baseInterval = 3000;
+    const maxInterval = 30000;
+    const minInterval = 1000;
+
+    // Проверяем, были ли изменения в последнем обновлении
+    if (this.hasRecentChanges()) {
+      // Если были изменения, ускоряем обновления
+      this.currentInterval = Math.max(minInterval, this.currentInterval * 0.8);
+    } else {
+      // Если изменений нет, замедляем обновления
+      this.currentInterval = Math.min(maxInterval, this.currentInterval * 1.3);
+    }
+  }
+
+  private hasRecentChanges(): boolean {
+    // Проверяем, были ли изменения в последние 10 секунд
+    const timeSinceLastUpdate = Date.now() - this.lastUpdateTime;
+    return timeSinceLastUpdate < 10000;
   }
 
   private stopDomainRefresh() {
     if (this.domainRefreshInterval) {
-      clearInterval(this.domainRefreshInterval);
+      clearTimeout(this.domainRefreshInterval);
       this.domainRefreshInterval = null;
     }
   }
 
   private updateDomains(domains: DomainInfo[]) {
+    const newHash = this.calculateDomainsHash(domains);
+
+    // Проверяем, есть ли реальные изменения
+    if (
+      newHash === this.lastDomainHash &&
+      this.domains.length === domains.length
+    ) {
+      return; // Нет изменений, пропускаем обновление
+    }
+
+    this.lastDomainHash = newHash;
     this.domains = domains;
+    this.lastUpdateTime = Date.now();
+
     if (this.isVisible && this.overlay) {
-      this.updateOverlayContent();
+      this.scheduleUpdate();
     }
 
     // Обновляем заголовок с количеством доменов
+    this.updateTitle();
+  }
+
+  // Performance optimization methods
+  private calculateDomainsHash(domains: DomainInfo[]): string {
+    return domains
+      .map((d) => `${d.domain}-${d.requestCount}-${d.proxyId || "direct"}`)
+      .join("|");
+  }
+
+  private scheduleUpdate() {
+    if (this.pendingUpdate) return;
+
+    this.pendingUpdate = true;
+    this.updateFrame = requestAnimationFrame(() => {
+      this.performDifferentialUpdate();
+      this.pendingUpdate = false;
+      this.updateFrame = null;
+    });
+  }
+
+  private performDifferentialUpdate() {
+    if (!this.overlay || !this.isVisible) return;
+
+    // Сначала обеспечиваем что структура категорий существует
+    this.ensureCategoryStructure();
+
+    // Обновляем только изменившиеся элементы
+    this.updateVisibleDomains();
+    this.updateTitle();
+    this.updateGroupCounts();
+  }
+
+  private ensureCategoryStructure() {
+    if (!this.overlay) return;
+
+    const content = this.overlay.querySelector(".overlay-content");
+    if (!content) return;
+
+    // Проверяем, нужно ли создать структуру категорий
+    const existingGroups = content.querySelectorAll(".domain-group");
+    const hasNoDomains = content.querySelector(".no-domains");
+
+    if (
+      (existingGroups.length === 0 || hasNoDomains) &&
+      this.domains.length > 0
+    ) {
+      // Создаем начальную структуру категорий
+      content.innerHTML = this.renderDomains();
+    } else if (existingGroups.length === 0 && this.domains.length === 0) {
+      content.innerHTML = '<div class="no-domains">No domains detected</div>';
+    }
+  }
+
+  private updateVisibleDomains() {
+    if (!this.overlay || this.domains.length === 0) {
+      return;
+    }
+
+    // Виртуализация: показываем только видимые элементы
+    const visibleDomains = this.getVisibleDomains();
+
+    // Для начала просто добавляем все видимые домены
+    visibleDomains.forEach((domain) => {
+      this.updateOrCreateDomainElement(domain);
+    });
+
+    // Удаляем элементы для доменов, которые больше не существуют
+    this.cleanupRemovedDomains();
+  }
+
+  private getVisibleDomains(): DomainInfo[] {
+    // В зависимости от размера списка применяем виртуализацию
+    if (this.domains.length > 100) {
+      return this.domains.slice(this.visibleRange.start, this.visibleRange.end);
+    }
+    return this.domains;
+  }
+
+  private updateOrCreateDomainElement(domain: DomainInfo) {
+    const domainKey = this.getDomainKey(domain);
+    const domainContainer = this.findDomainContainer(domain);
+
+    if (!domainContainer) {
+      return;
+    }
+
+    const currentElement = domainContainer.querySelector(
+      `[data-domain="${domain.domain}"]`
+    );
+
+    if (!currentElement) {
+      // Создаем новый элемент
+      const newElement = this.createDomainElement(domain);
+      domainContainer.appendChild(newElement);
+      this.domainElementCache.set(domainKey, newElement);
+    } else {
+      // Обновляем только изменившиеся части
+      this.updateDomainElementData(currentElement, domain);
+    }
+  }
+
+  private getDomainKey(domain: DomainInfo): string {
+    return `${domain.domain}-${domain.requestCount}-${
+      domain.proxyId || "direct"
+    }`;
+  }
+
+  private findDomainContainer(domain: DomainInfo): Element | null {
+    if (!this.overlay) return null;
+
+    // Ищем header категории, затем следующий sibling - content контейнер
+    const categoryHeader = this.overlay.querySelector(
+      `[data-category="${domain.category}"]`
+    );
+
+    if (!categoryHeader) return null;
+
+    const categoryContainer = categoryHeader.nextElementSibling as Element;
+    return categoryContainer;
+  }
+
+  private createDomainElement(domain: DomainInfo): HTMLElement {
+    const element = document.createElement("div");
+    element.className = "domain-item";
+    element.setAttribute("data-domain", domain.domain);
+    element.innerHTML = this.getDomainHTML(domain);
+
+    // Добавляем в intersection observer для lazy loading
+    this.intersectionObserver?.observe(element);
+
+    return element;
+  }
+
+  private getDomainHTML(domain: DomainInfo): string {
+    const proxyIndicator = domain.proxyId
+      ? `<span class="proxy-indicator" style="background-color: ${
+          domain.color || "#666"
+        }" title="Proxy: ${domain.proxyId}"></span>`
+      : `<span class="proxy-indicator direct" title="Direct connection">D</span>`;
+
+    return `
+      ${proxyIndicator}
+      <span class="domain-name">${domain.domain}</span>
+      <span class="request-count">${domain.requestCount}</span>
+      <div class="domain-actions">
+        <select class="proxy-selector">
+          ${this.getAllProxyOptions(domain.proxyId)}
+        </select>
+      </div>
+    `;
+  }
+
+  private updateDomainElementData(element: Element, domain: DomainInfo) {
+    const countEl = element.querySelector(".request-count");
+    const proxyEl = element.querySelector(".proxy-indicator");
+    const selectorEl = element.querySelector(
+      ".proxy-selector"
+    ) as HTMLSelectElement;
+
+    // Обновляем счетчик запросов
+    if (countEl && countEl.textContent !== domain.requestCount.toString()) {
+      countEl.textContent = domain.requestCount.toString();
+    }
+
+    // Обновляем индикатор прокси
+    if (proxyEl) {
+      this.updateProxyIndicator(proxyEl, domain);
+    }
+
+    // Обновляем селектор прокси
+    if (selectorEl && selectorEl.value !== (domain.proxyId || "direct")) {
+      selectorEl.value = domain.proxyId || "direct";
+    }
+  }
+
+  private updateProxyIndicator(proxyEl: Element, domain: DomainInfo) {
+    if (domain.proxyId) {
+      proxyEl.className = "proxy-indicator";
+      (proxyEl as HTMLElement).style.backgroundColor = domain.color || "#666";
+      proxyEl.setAttribute("title", `Proxy: ${domain.proxyId}`);
+      proxyEl.textContent = "";
+    } else {
+      proxyEl.className = "proxy-indicator direct";
+      (proxyEl as HTMLElement).style.backgroundColor = "";
+      proxyEl.setAttribute("title", "Direct connection");
+      proxyEl.textContent = "D";
+    }
+  }
+
+  private cleanupRemovedDomains() {
+    const currentDomains = new Set(this.domains.map((d) => d.domain));
+
+    // Удаляем элементы для доменов, которые больше не существуют
+    this.domainElementCache.forEach((element, key) => {
+      const domain = key.split("-")[0];
+      if (!currentDomains.has(domain)) {
+        element.remove();
+        this.domainElementCache.delete(key);
+        this.intersectionObserver?.unobserve(element);
+      }
+    });
+  }
+
+  private updateTitle() {
     if (this.overlay) {
       const title = this.overlay.querySelector(".overlay-title");
       if (title) {
         title.textContent = `Domains (${this.domains.length})`;
       }
     }
+  }
+
+  private updateGroupCounts() {
+    const groupedDomains = this.groupDomainsByCategory();
+
+    Object.entries(groupedDomains).forEach(([category, domains]) => {
+      const groupHeader = this.overlay?.querySelector(
+        `[data-category="${category}"] .group-count`
+      );
+      if (groupHeader) {
+        groupHeader.textContent = `(${domains.length})`;
+      }
+    });
   }
 
   private async assignDomainToProxy(domain: string, proxyId: string) {

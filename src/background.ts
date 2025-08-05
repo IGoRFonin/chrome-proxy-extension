@@ -16,6 +16,9 @@ chrome.runtime.onInstalled.addListener(async () => {
   // Initialize color generator
   await ColorGenerator.init();
 
+  // Initialize domain tracker
+  domainTracker.init();
+
   // Create base context menu items
   chrome.contextMenus.create({
     id: "addDomain",
@@ -69,6 +72,9 @@ chrome.runtime.onStartup.addListener(async () => {
   } else {
     updateIcon(false);
   }
+
+  // Reinitialize domain tracker
+  domainTracker.init();
 });
 
 // Also initialize on extension load (helps when extension is reloaded/updated)
@@ -85,6 +91,9 @@ chrome.runtime.onStartup.addListener(async () => {
 
   // Initialize color generator
   await ColorGenerator.init();
+
+  // Initialize domain tracker
+  domainTracker.init();
 })();
 
 // Update context menus based on current state

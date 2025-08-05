@@ -73,11 +73,23 @@ export class DomainTracker {
   private domains: Map<string, DomainInfo> = new Map();
   private tabDomains: Map<number, Set<string>> = new Map();
 
+  private isInitialized = false;
+
   constructor() {
+    // Не инициализируем listeners в constructor
+  }
+
+  public init() {
+    if (this.isInitialized) return;
+
+    console.log("Initializing DomainTracker webRequest listeners");
     this.setupWebRequestListener();
+    this.isInitialized = true;
   }
 
   private setupWebRequestListener() {
+    console.log("Setting up webRequest listeners");
+
     chrome.webRequest.onBeforeRequest.addListener(
       (details) => this.handleRequest(details),
       { urls: ["<all_urls>"] },
@@ -88,6 +100,8 @@ export class DomainTracker {
       (details) => this.handleRequestCompleted(details),
       { urls: ["<all_urls>"] }
     );
+
+    console.log("WebRequest listeners registered");
   }
 
   private handleRequest(details: chrome.webRequest.WebRequestBodyDetails) {
@@ -225,9 +239,10 @@ export class DomainTracker {
 
   public getDomainsForTab(tabId: number): DomainInfo[] {
     const tabDomainSet = this.tabDomains.get(tabId);
+
     if (!tabDomainSet) return [];
 
-    return Array.from(tabDomainSet)
+    const result = Array.from(tabDomainSet)
       .map((domain) => this.domains.get(domain))
       .filter(
         (domainInfo): domainInfo is DomainInfo => domainInfo !== undefined
@@ -246,6 +261,8 @@ export class DomainTracker {
         }
         return b.requestCount - a.requestCount;
       });
+
+    return result;
   }
 
   public clearTabDomains(tabId: number) {
