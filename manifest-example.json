@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Chrome Proxy Extension",
+  "version": "1.0",
+  "description": "Chrome extension with properly sized icons (based on logo-round.png)",
+  
+  "icons": {
+    "16": "public/icon-16.png",
+    "19": "public/icon-19.png", 
+    "32": "public/icon-32.png",
+    "38": "public/icon-38.png",
+    "48": "public/icon-48.png",
+    "128": "public/icon-128.png"
+  },
+  
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "public/icon-16.png",
+      "19": "public/icon-19.png",
+      "32": "public/icon-32.png",
+      "38": "public/icon-38.png"
+    }
+  },
+  
+  "background": {
+    "service_worker": "background.js"
+  },
+  
+  "permissions": [
+    "proxy",
+    "storage"
+  ]
+}

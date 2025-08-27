@@ -164,7 +164,12 @@ function updateContextMenus(state: AppState) {
 }
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  const url = new URL(tab?.url || "");
+  if (!tab?.url) {
+    console.warn("Context menu clicked but no tab URL available");
+    return;
+  }
+
+  const url = new URL(tab.url);
   const domain = url.hostname;
 
   // Handle overlay controls
@@ -257,8 +262,18 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
 function updateIcon(isActive: boolean) {
   chrome.action.setIcon({
-    path: isActive ? "icon-active-128.png" : "icon-128.png",
+    path: {
+      "16": "icon-16.png",
+      "19": "icon-19.png",
+      "32": "icon-32.png",
+      "38": "icon-38.png",
+      "48": "icon-48.png",
+      "128": "icon-128.png",
+    },
   });
+
+  // TODO: В будущем можно добавить отдельные иконки для активного состояния
+  // Пока используем одинаковые иконки для активного и неактивного состояния
 }
 
 chrome.storage.onChanged.addListener((changes, namespace) => {
@@ -306,39 +321,44 @@ function setProxySettings(
       (a, b) => (a.priority || 0) - (b.priority || 0)
     );
 
+    // Build PAC script as string to avoid minification issues
+    const proxyData = JSON.stringify(
+      sortedProxies.map((p) => ({
+        host: p.host,
+        port: p.port,
+        domains: p.domains,
+      }))
+    );
+
+    const pacScript = [
+      "function FindProxyForURL(url, host) {",
+      "  var proxies = " + proxyData + ";",
+      "  ",
+      "  // Check each proxy in priority order",
+      "  for (var i = 0; i < proxies.length; i++) {",
+      "    var proxy = proxies[i];",
+      "    var domains = proxy.domains;",
+      "    ",
+      "    for (var j = 0; j < domains.length; j++) {",
+      "      var domain = domains[j];",
+      "      if (domain.startsWith('*.')) {",
+      "        var suffix = domain.substr(1);",
+      "        if (dnsDomainIs(host, suffix) || host.endsWith(suffix)) {",
+      "          return 'PROXY ' + proxy.host + ':' + proxy.port;",
+      "        }",
+      "      } else if (host === domain || host.endsWith('.' + domain)) {",
+      "        return 'PROXY ' + proxy.host + ':' + proxy.port;",
+      "      }",
+      "    }",
+      "  }",
+      "  return 'DIRECT';",
+      "}",
+    ].join("\n");
+
     config = {
       mode: "pac_script",
       pacScript: {
-        data: `
-          function FindProxyForURL(url, host) {
-            var proxies = ${JSON.stringify(
-              sortedProxies.map((p) => ({
-                host: p.host,
-                port: p.port,
-                domains: p.domains,
-              }))
-            )};
-
-            // Check each proxy in priority order
-            for (var i = 0; i < proxies.length; i++) {
-              var proxy = proxies[i];
-              var domains = proxy.domains;
-
-              for (var j = 0; j < domains.length; j++) {
-                var domain = domains[j];
-                if (domain.startsWith('*.')) {
-                  var suffix = domain.substr(1);
-                  if (dnsDomainIs(host, suffix) || host.endsWith(suffix)) {
-                    return "PROXY " + proxy.host + ":" + proxy.port;
-                  }
-                } else if (host === domain || host.endsWith('.' + domain)) {
-                  return "PROXY " + proxy.host + ":" + proxy.port;
-                }
-              }
-            }
-            return "DIRECT";
-          }
-        `,
+        data: pacScript,
       },
     };
   }

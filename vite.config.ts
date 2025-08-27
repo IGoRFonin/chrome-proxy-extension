@@ -9,6 +9,11 @@ export default defineConfig({
     {
       name: "copy-files",
       writeBundle() {
+        copyFileSync("public/icon-16.png", "dist/icon-16.png");
+        copyFileSync("public/icon-19.png", "dist/icon-19.png");
+        copyFileSync("public/icon-32.png", "dist/icon-32.png");
+        copyFileSync("public/icon-38.png", "dist/icon-38.png");
+        copyFileSync("public/icon-48.png", "dist/icon-48.png");
         copyFileSync("public/icon-128.png", "dist/icon-128.png");
         copyFileSync("manifest.json", "dist/manifest.json");
         copyFileSync("schema.json", "dist/schema.json");
