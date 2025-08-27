@@ -1,101 +1,250 @@
-# Chrome Proxy Extension
+# 🌐 Chrome Proxy Manager
 
-A Chrome browser extension that allows users to easily configure and manage multiple proxy settings directly from their browser. This extension provides a simple interface to modify proxy settings without diving into Chrome's settings menu.
+**Умное управление прокси на уровне доменов прямо из браузера.**
 
-## Features
+Chrome-расширение для автоматического переключения между прокси-серверами в зависимости от домена. Больше никаких ручных переключений — каждый сайт автоматически использует нужный прокси.
 
-### Multi-Proxy Support
-- **Global Mode**: Use one active proxy for all domains (simple proxy switching)
-- **Domain-Based Mode**: Use multiple active proxies simultaneously, each with their own domain lists
-- Advanced routing with automatic conflict resolution by priority
+---
 
-### Proxy Management
-- Quick proxy enable/disable toggle
-- Easy-to-use interface for adding and managing multiple proxies
-- Supports different proxy protocols (HTTP/HTTPS)
-- Bulk proxy import from various formats
-- In-line proxy name editing
+## 🎯 Зачем это нужно?
 
-### Domain Control
-- Flexible domain configuration for each proxy
-- Wildcard domain support (e.g., `*.google.com`)
-- Context menu integration for quick domain addition
-- Automatic conflict detection and resolution
-- Priority-based routing for overlapping domains
+**Проблема**: В России заблокированы многие зарубежные сервисы. Приходится постоянно включать/выключать VPN или менять прокси в настройках браузера:
+- YouTube, Twitter, ChatGPT через VPN
+- Российские сайты напрямую (быстрее)
+- Некоторые сервисы через определенные прокси
 
-### User Experience
-- Real-time conflict warnings
-- Intuitive modal dialogs for configuration
-- Visual indicators for active proxies and domain conflicts
-- Responsive design for different screen sizes
+**Решение**: Настройте один раз — работайте всегда. Расширение автоматически направит заблокированные сайты через нужный прокси, а российские оставит без изменений.
 
-## Installation
+## ✨ Ключевые преимущества
 
-1. Clone this repository
-2. Install dependencies: `npm install`
-3. Build the extension: `npm run build`
-4. Open Chrome and navigate to `chrome://extensions/`
-5. Enable "Developer mode" in the top right corner
-6. Click "Load unpacked" and select the built `dist` directory
+### 🚀 Интеллектуальная маршрутизация
+- **Разные прокси для разных доменов** — основная фишка расширения
+- Автоматическое переключение без участия пользователя
+- Поддержка wildcard-доменов (`*.google.com`, `*.github.com`)
+- Система приоритетов для разрешения конфликтов
 
-## Usage
+### ⚡ Два режима работы
+- **Global Mode**: Один активный прокси для всех сайтов (простое переключение)
+- **Domain-Based Mode**: Множественные активные прокси с умной маршрутизацией
 
-### Proxy Modes
+### 🛠 Удобное управление
+- Интуитивный интерфейс без лишних настроек
+- Контекстное меню — клик правой кнопкой для добавления домена
+- Контекстное меню — просмотр и добавление всех доменов через интерфейс
+- Bulk-импорт прокси из разных форматов
+- Визуальные индикаторы состояния и конфликтов
 
-#### Global Mode
-- Only one proxy can be active at a time
-- All internet traffic goes through the active proxy
-- Perfect for simple proxy switching scenarios
+---
 
-#### Domain-Based Mode
-- Multiple proxies can be active simultaneously
-- Each proxy maintains its own list of domains
-- Traffic is routed based on domain matching
-- Conflicts are resolved by proxy priority (order in list)
-- Domains not matched by any proxy go direct
+## 📸 Как это выглядит
 
-### Adding Proxies
+<!--
+Добавьте сюда скриншот или GIF демонстрирующий:
+1. Главное окно расширения
+2. Процесс добавления прокси
+3. Настройку доменов
+4. Работу контекстного меню
 
-The extension supports multiple proxy formats:
-- `host:port`
-- `host:port:username:password`
-- `username:password@host:port`
+Рекомендуемый размер: 800x600px
+Формат: PNG или WebP для статичных изображений, GIF для демонстрации
+-->
 
-### Domain Configuration
+*[Место для скриншота интерфейса]*
 
-- **Exact domains**: `example.com` matches only example.com
-- **Wildcard domains**: `*.example.com` matches all subdomains
-- **Context menu**: Right-click on any webpage to quickly add domains
+---
 
-### Priority System
+## 🚀 Быстрый старт
 
-In Domain-Based mode, when multiple proxies have overlapping domains:
-1. Proxies are prioritized by their order in the list (top = highest priority)
-2. The first matching proxy in priority order handles the request
-3. Visual warnings show domain conflicts in the interface
+### Для пользователей (готовая сборка)
 
-## Development
+1. **Скачайте** последний релиз с [GitHub Releases](../../releases)
+2. **Откройте** Chrome → `chrome://extensions/`
+3. **Включите** "Режим разработчика" (Developer mode)
+4. **Нажмите** "Загрузить распакованное расширение" (Load unpacked)
+5. **Выберите** папку с расширением
+6. **Готово!** Иконка появится в панели инструментов
 
-### Project Structure
-- `src/types.ts` - TypeScript interfaces and types
-- `src/background.ts` - Background script with proxy logic and PAC script generation
-- `src/components/` - React UI components
-- `src/utils/storage.ts` - Data persistence and migration logic
+### Для разработчиков (сборка из исходников)
 
-### Key Features Implementation
-- **PAC Script Generation**: Dynamic PAC scripts for complex domain routing
-- **Data Migration**: Automatic migration from legacy single-proxy data
-- **Conflict Detection**: Real-time domain conflict analysis
-- **Context Menu**: Dynamic menu generation based on active proxies
+```bash
+# Клонируйте репозиторий
+git clone https://github.com/your-username/chrome-proxy-extension.git
+cd chrome-proxy-extension
 
-## Contributing
+# Установите зависимости
+npm install
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly with both proxy modes
-5. Submit a pull request
+# Соберите расширение
+npm run build
 
-## License
+# Загрузите в Chrome
+# 1. Откройте chrome://extensions/
+# 2. Включите "Developer mode"
+# 3. Нажмите "Load unpacked"
+# 4. Выберите папку ./dist
+```
 
-This project is licensed under the MIT License.
+---
+
+## 💡 Использование
+
+### 1️⃣ Добавление первого прокси
+
+```
+Форматы поддержки:
+✅ host:port
+✅ host:port:username:password
+✅ username:password@host:port
+```
+
+### 2️⃣ Настройка доменов
+
+**Вариант А**: Через интерфейс
+- Откройте расширение → Add Domain → введите домен
+
+**Вариант Б**: Через контекстное меню
+- ПКМ на странице → "Add to [Proxy Name]"
+
+### 3️⃣ Примеры настройки
+
+```yaml
+# Заблокированные видеохостинги
+YouTube прокси:
+  - youtube.com
+  - *.youtube.com
+  - *.googlevideo.com
+  - *.ytimg.com
+
+# Социальные сети
+VPN прокси:
+  - chatgpt.com
+  - *.twitter.com
+  - *.tiktok.com
+
+# Зарубежные IT-сервисы
+IT прокси:
+  - *.github.com
+  - *.stackoverflow.com
+  - *.medium.com
+  - *.discord.com
+```
+
+---
+
+## 🏗 Сборка и разработка
+
+### Системные требования
+
+- **Node.js** 16+
+- **Chrome** 88+
+- **npm** или **yarn**
+
+### Структура проекта
+
+```
+src/
+├── background.ts          # Service Worker, PAC-скрипты
+├── popup.tsx             # Главное окно расширения
+├── content-script.ts     # Интеграция с веб-страницами
+├── components/           # React компоненты
+│   ├── ProxyTable.tsx    # Таблица прокси
+│   ├── AddProxyForm.tsx  # Форма добавления
+│   └── ...
+└── utils/
+    ├── storage.ts        # Работа с хранилищем
+    └── domainTracker.ts  # Отслеживание доменов
+```
+
+### Команды разработки
+
+```bash
+# Режим разработки с hot reload
+npm run dev
+
+# Продакшн сборка
+npm run build
+
+# Предпросмотр сборки
+npm run preview
+```
+
+### Отладка
+
+1. **Background script**: `chrome://extensions/` → расширение → "background page"
+2. **Popup**: ПКМ на иконке → "Проверить элемент"
+3. **Content script**: F12 в любой вкладке → Console → выбрать context
+
+---
+
+## 🔧 API и настройки
+
+### Поддерживаемые протоколы
+- HTTP (`http://proxy:8080`)
+
+### Продвинутые настройки
+
+```javascript
+// Настройки в chrome.storage.local
+{
+  "proxyMode": "domain" | "global",
+  "proxies": [
+    {
+      "id": "unique-id",
+      "name": "Display Name",
+      "host": "proxy.example.com",
+      "port": 8080,
+      "username": "optional",
+      "password": "optional",
+      "domains": ["*.example.com", "test.local"],
+      "enabled": true,
+      "priority": 1
+    }
+  ]
+}
+```
+
+---
+
+## 🤝 Участие в разработке
+
+Мы открыты для вклада! Вот как можно помочь:
+
+### Быстрый вклад
+- 🐛 **Bug reports**: Создайте issue с подробным описанием
+- 💡 **Feature requests**: Поделитесь идеями улучшений
+- 📝 **Документация**: Исправления и дополнения приветствуются
+- 🌍 **Переводы**: Помогите с локализацией
+
+### Разработка
+
+1. **Fork** репозиторий
+2. **Создайте** feature-ветку: `git checkout -b feature/amazing-feature`
+3. **Тестируйте** в обоих режимах (Global/Domain-Based)
+4. **Коммитьте**: `git commit -m 'Add amazing feature'`
+5. **Push**: `git push origin feature/amazing-feature`
+6. **Откройте** Pull Request
+
+---
+
+## 📄 Лицензия
+
+Этот проект распространяется под лицензией [MIT](LICENSE).
+
+---
+
+## 🙋‍♂️ Поддержка
+
+- 📚 **Документация**: Посмотрите [Wiki](../../wiki)
+- 🐛 **Баги**: Создайте [Issue](../../issues/new?template=bug_report.md)
+- 💬 **Вопросы**: Используйте [Discussions](../../discussions)
+- ✉️ **Email**: support@yourproject.com
+
+---
+
+<div align="center">
+
+**⭐ Поставьте звездочку, если проект оказался полезным!**
+
+Made with ❤️ for Chrome power users
+
+</div>
