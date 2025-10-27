@@ -309,7 +309,6 @@ function setProxySettings(
       mode: "fixed_servers",
       rules: {
         singleProxy: {
-          scheme: "http",
           host: activeProxy.host,
           port: parseInt(activeProxy.port, 10),
         },
@@ -333,6 +332,10 @@ function setProxySettings(
     const pacScript = [
       "function FindProxyForURL(url, host) {",
       "  var proxies = " + proxyData + ";",
+      "  ",
+      "  // Parse URL to check protocol",
+      "  var protocol = url.substring(0, url.indexOf(':'));",
+      "  var isWebSocket = (protocol === 'ws' || protocol === 'wss');",
       "  ",
       "  // Check each proxy in priority order",
       "  for (var i = 0; i < proxies.length; i++) {",
@@ -391,6 +394,11 @@ async function authListener(
 ) {
   const appState = await StorageManager.getState();
   const activeProxies = appState.proxies.filter((proxy) => proxy.active);
+
+  // Log WebSocket authentication requests
+  if (details.url && (details.url.startsWith('wss://') || details.url.startsWith('ws://'))) {
+    console.log('WebSocket authentication required for:', details.url);
+  }
 
   // Reset auth counter for new URLs
   if (authAttemptCount > 0 && details.requestId) {

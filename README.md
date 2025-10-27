@@ -148,6 +148,12 @@ IT прокси:
   - *.stackoverflow.com
   - *.medium.com
   - *.discord.com
+
+# WebSocket сервисы (автоматически поддерживаются)
+WebSocket прокси:
+  - app.atlas.so         # Collaboration tools
+  - *.slack.com          # Real-time messaging
+  - *.notion.so          # Live editing
 ```
 
 ---
@@ -195,12 +201,35 @@ npm run preview
 2. **Popup**: ПКМ на иконке → "Проверить элемент"
 3. **Content script**: F12 в любой вкладке → Console → выбрать context
 
+### Тестирование WebSocket
+
+```javascript
+// Тестирование WebSocket соединения через прокси
+// В консоли браузера (F12):
+const ws = new WebSocket('wss://echo.websocket.org/');
+ws.onopen = () => console.log('✅ WebSocket connected through proxy');
+ws.onerror = (e) => console.error('❌ WebSocket connection error:', e);
+ws.onmessage = (e) => console.log('📨 Received:', e.data);
+
+// Отправка тестового сообщения
+ws.send('Hello from proxy!');
+```
+
+**Проверка через DevTools**:
+- Chrome DevTools → Network → Filter by WS
+- Проверьте, что соединение проходит через прокси
+- В background script console ищите логи аутентификации WebSocket
+
 ---
 
 ## 🔧 API и настройки
 
 ### Поддерживаемые протоколы
-- HTTP (`http://proxy:8080`)
+- HTTP/HTTPS (`http://`, `https://`)
+- WebSocket (`ws://`, `wss://`)
+  - Автоматическая поддержка во всех режимах
+  - Работает через метод CONNECT для туннелирования
+  - Поддерживает аутентификацию прокси
 
 ### Продвинутые настройки
 

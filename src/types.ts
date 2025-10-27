@@ -34,6 +34,7 @@ export interface DomainInfo {
   requestCount: number;
   lastSeen: number;
   color?: string; // цвет для визуализации
+  isWebSocket?: boolean; // флаг для WebSocket соединений
 }
 
 export type DomainCategory = "main" | "analytics" | "cdn" | "ads" | "other";

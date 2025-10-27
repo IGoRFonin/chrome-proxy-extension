@@ -109,8 +109,9 @@ export class DomainTracker {
 
     const url = new URL(details.url);
     const domain = url.hostname;
+    const isWebSocket = url.protocol === 'ws:' || url.protocol === 'wss:';
 
-    this.trackDomain(domain, details.tabId);
+    this.trackDomain(domain, details.tabId, isWebSocket);
   }
 
   private handleRequestCompleted(
@@ -131,7 +132,7 @@ export class DomainTracker {
     // НЕ отправляем автоматические обновления - content script сам запросит данные
   }
 
-  private trackDomain(domain: string, tabId: number) {
+  private trackDomain(domain: string, tabId: number, isWebSocket: boolean = false) {
     // Пропускаем локальные домены и IP адреса
     if (this.isLocalDomain(domain)) return;
 
@@ -148,12 +149,17 @@ export class DomainTracker {
         category: this.categorizeDomain(domain),
         requestCount: 1,
         lastSeen: Date.now(),
+        isWebSocket,
       };
       this.domains.set(domain, domainInfo);
     } else {
       const domainInfo = this.domains.get(domain)!;
       domainInfo.requestCount++;
       domainInfo.lastSeen = Date.now();
+      // Обновляем флаг WebSocket, если это WebSocket соединение
+      if (isWebSocket) {
+        domainInfo.isWebSocket = true;
+      }
     }
 
     // НЕ отправляем автоматические обновления в content script
