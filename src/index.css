@@ -261,6 +261,17 @@ button:hover {
     border-top: 1px solid #E5E7EB;
 }
 
+.confirm-message {
+    padding: 24px;
+}
+
+.confirm-message p {
+    margin: 0;
+    color: #374151;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
 /* Form Styling */
 .form-group {
     padding: 16px 24px;

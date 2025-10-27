@@ -30,8 +30,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal">
-      <h2>Proxy Settings</h2>
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h3>Proxy Settings</h3>
+          <button className="close-button" onClick={onClose}>
+            &times;
+          </button>
+        </div>
       <div className="proxy-settings-container">
         <div className="mode-option">
           <label>
@@ -100,13 +106,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         )}
       </div>
 
-      <div className="modal-actions">
-        <button onClick={handleSave} className="save-button">
-          Save
-        </button>
-        <button onClick={onClose} className="cancel-button">
-          Cancel
-        </button>
+        <div className="modal-actions">
+          <button onClick={onClose} className="cancel-button">
+            Cancel
+          </button>
+          <button onClick={handleSave} className="save-button">
+            Save
+          </button>
+        </div>
       </div>
     </div>
   );

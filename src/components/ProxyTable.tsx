@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ProxyEntry, ProxySettings } from "../types";
 import { Settings } from "lucide-react";
+import ConfirmModal from "./ConfirmModal";
 
 interface ProxyTableProps {
   proxies: ProxyEntry[];
@@ -25,6 +26,8 @@ const ProxyTable: React.FC<ProxyTableProps> = ({
 }) => {
   const [editingNameIndex, setEditingNameIndex] = useState<number | null>(null);
   const [editingNameValue, setEditingNameValue] = useState("");
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
   const handleNameDoubleClick = (index: number, currentName: string) => {
     setEditingNameIndex(index);
@@ -59,6 +62,18 @@ const ProxyTable: React.FC<ProxyTableProps> = ({
   const cancelNameEdit = () => {
     setEditingNameIndex(null);
     setEditingNameValue("");
+  };
+
+  const handleDeleteClick = (index: number) => {
+    setDeleteIndex(index);
+    setConfirmDeleteOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (deleteIndex !== null && deleteProxy) {
+      deleteProxy(deleteIndex);
+      setDeleteIndex(null);
+    }
   };
 
   const getDomainConflicts = (index: number): string[] => {
@@ -227,7 +242,7 @@ const ProxyTable: React.FC<ProxyTableProps> = ({
                     </button>
                     {deleteProxy && (
                       <button
-                        onClick={() => deleteProxy(index)}
+                        onClick={() => handleDeleteClick(index)}
                         className="delete-button"
                       >
                         Delete
@@ -240,6 +255,24 @@ const ProxyTable: React.FC<ProxyTableProps> = ({
           )}
         </tbody>
       </table>
+
+      <ConfirmModal
+        isOpen={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Proxy"
+        message={
+          deleteIndex !== null
+            ? `Are you sure you want to delete proxy ${
+                proxies[deleteIndex].name ||
+                proxies[deleteIndex].host + ":" + proxies[deleteIndex].port
+              }?`
+            : "Are you sure you want to delete this proxy?"
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDanger={true}
+      />
     </div>
   );
 };
